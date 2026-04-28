@@ -1,4 +1,4 @@
-# Tiled Menu
+# Tiled Menu Prime
 
 https://store.kde.org/p/2142716/
 
@@ -27,3 +27,11 @@ Read the [theming guide](Theming.md) to develop Desktop/Icon Themes for this wid
 ## Translating
 
 See the [package/translate](package/translate) folder for instructions on translating.
+
+## Credit
+
+Original author: zren
+Based on (forked from) zren's incredible work in https://github.com/Zren/plasma-applet-tiledmenu.
+Original work created under GPLv2+ licence.
+
+NOTE: If you want to pull in your setup from zren's Tiled Menu, use Import/Export Layout option through the Configuration dialog.

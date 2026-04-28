@@ -19,7 +19,7 @@
 				"Name": "Nick Irwin"
 			}
 		],
-		"BugReportUrl": "https://github.com/nirwin81/plasma-applet-tiledmenu/issues",
+		"BugReportUrl": "https://github.com/nirwin81/plasma-applet-tiledmenu-prime/issues",
 		"Category": "Application Launchers",
 		"Description": "A menu based on Windows 10's Start Menu.",
 		"Description[es]": "Menú basado en el menú de inicio de Windows 10",
@@ -39,7 +39,7 @@
 		"Id": "com.github.nirwin81.tiledmenu",
 		"License": "GPL-2.0+",
 		"Name": "Tiled Menu Prime",
-		"Name[es]": "Menú con Baldosas",
+		"Name[es]": "Menú con Baldosas Prime",
 		"Name[fa]": "منو طرح کاشی",
 		"Name[fi]": "Tiled Menu",
 		"Name[fr]": "Tiled Menu",
