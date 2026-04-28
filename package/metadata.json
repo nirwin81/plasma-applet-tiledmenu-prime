@@ -53,7 +53,7 @@
 		"Name[tr]": "Döşeli Menü",
 		"Name[zh_TW]": "方塊磚選單",
 		"Version": "47",
-		"Website": "https://github.com/nirwin81/plasma-applet-tiledmenu"
+		"Website": "https://github.com/nirwin81/plasma-applet-tiledmenu-prime"
 	},
 	"X-Plasma-API-Minimum-Version": "6.0",
 	"X-Plasma-Provides": [

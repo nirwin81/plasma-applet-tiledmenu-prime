@@ -1,6 +1,6 @@
 # Tiled Menu Prime
 
-https://store.kde.org/p/2142716/
+https://www.opendesktop.org/p/2357462/
 
 A menu based on Windows 10's Start Menu.
 
