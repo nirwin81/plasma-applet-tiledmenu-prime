@@ -31,6 +31,7 @@ See the [package/translate](package/translate) folder for instructions on transl
 ## Credit
 
 Original author: zren
+
 Based on (forked from) zren's incredible work in https://github.com/Zren/plasma-applet-tiledmenu.
 Original work created under GPLv2+ licence.
 
