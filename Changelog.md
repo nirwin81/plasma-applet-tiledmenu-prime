@@ -1,4 +1,4 @@
-## v47 - April 27 2026
+## v1.0.0 - April 27 2026 (restarted numbering to coincide with new product on KDE Store)
 
 * Forked from zren's Tiled Menu
 * Added dynamic pusher for tile grid
