@@ -83,6 +83,7 @@ Item {
 				id: userMenuButton
 				icon.name: kuser.hasFaceIcon ? kuser.faceIconUrl : 'user-identity'
 				text: kuser.fullName
+				visible: !plasmoid.configuration.hideUserControl
 				onClicked: {
 					userMenu.toggleOpen()
 				}
@@ -111,6 +112,7 @@ Item {
 				id: powerMenuButton
 				icon.name: 'system-shutdown-symbolic'
 				text: i18n("Power")
+				visible: !plasmoid.configuration.hidePowerControl
 				onClicked: {
 					powerMenu.toggleOpen()
 				}

@@ -52,7 +52,7 @@
 		"Name[sl]": "Meni s ploščicami",
 		"Name[tr]": "Döşeli Menü",
 		"Name[zh_TW]": "方塊磚選單",
-		"Version": "1.0.0",
+		"Version": "1.0.1",
 		"Website": "https://github.com/nirwin81/plasma-applet-tiledmenu-prime"
 	},
 	"X-Plasma-API-Minimum-Version": "6.0",

@@ -46,6 +46,14 @@
 			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory, TilesOnly -->
 			<default>Alphabetical</default>
 		</entry>
+		<entry name="hideUserControl" type="bool">
+			<label>Whether to hide the "User" control on the Sidebar.</label>
+			<default>false</default>
+		</entry>
+		<entry name="hidePowerControl" type="bool">
+			<label>Whether to hide the "Power" control on the Sidebar.</label>
+			<default>false</default>
+		</entry>
 
 		<!-- Apps -->
 		<entry name="terminalApp" type="string">

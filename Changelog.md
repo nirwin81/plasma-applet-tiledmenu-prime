@@ -1,3 +1,7 @@
+## v1.0.1 - May 16 2026
+
+* Add configuration control to hide Power and User entries on the Sidebar (issue #4)
+
 ## v1.0.0 - April 27 2026 (restarted numbering to coincide with new product on KDE Store)
 
 * Forked from zren's Tiled Menu
