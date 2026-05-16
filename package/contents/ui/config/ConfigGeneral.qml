@@ -368,6 +368,14 @@ LibConfig.FormKCM {
 			Item { Layout.fillHeight: true }
 		}
 	}
+	LibConfig.CheckBox {
+		text: i18n("Hide User controls")
+		configKey: 'hideUserControl'
+	}
+	LibConfig.CheckBox {
+		text: i18n("Hide Power controls")
+		configKey: 'hidePowerControl'
+	}
 
 
 
