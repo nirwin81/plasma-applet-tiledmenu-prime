@@ -48,7 +48,16 @@ Item {
 	readonly property real cellMargin: cellMarginUnits * tileScale * scaleFactor
 	readonly property real cellPushedMargin: cellMargin * 2
 	readonly property int cellBoxSize: cellMargin + cellSize + cellMargin
-	readonly property bool smallTileIcons: plasmoid.configuration.smallTileIcons
+	readonly property string tileIconSize: plasmoid.configuration.tileIconSize
+
+	readonly property real tileIconSizePercent: {
+		switch (plasmoid.configuration.tileIconSize) {
+			case "small": return 60
+			case "medium": return 80
+			case "large": return 100
+			default: return 80
+		}
+	}
 	readonly property int tileGridWidth: plasmoid.configuration.favGridCols * cellBoxSize
 
 	readonly property int favCellWidth: 60 * scaleFactor

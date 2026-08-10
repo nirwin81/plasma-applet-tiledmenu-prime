@@ -162,9 +162,16 @@ LibConfig.FormKCM {
 		minimumValue: 0
 		maximumValue: config.cellBoxUnits/2
 	}
-	LibConfig.CheckBox {
-		text: i18n("Use smaller tile icons")
-		configKey: 'smallTileIcons'
+
+	LibConfig.ComboBox {
+		configKey: 'tileIconSize'
+		Kirigami.FormData.label: i18n("Tile Icon Size")
+
+		model: [
+			{ value: "small", text: i18n("Small") },
+			{ value: "medium", text: i18n("Medium") },
+			{ value: "large", text: i18n("Large") }
+		]
 	}
 
 	LibConfig.RadioButtonGroup {
