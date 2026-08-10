@@ -78,8 +78,8 @@
 		<entry name="tileMargin" type="double">
 			<default>5</default>
 		</entry>
-		<entry name="smallTileIcons" type="bool">
-			<default>false</default>
+		<entry name="tileIconSize" type="string">
+			<default>medium</default>
 		</entry>
 		<entry name="tilesLocked" type="bool">
 			<default>false</default>

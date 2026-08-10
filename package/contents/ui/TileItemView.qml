@@ -17,9 +17,8 @@ Rectangle {
 	gradient: appObj.backgroundGradient ? tileGradient.createObject(tileItemView) : null
 
 	readonly property int tilePadding: 4 * config.scaleFactor
-	readonly property int smallIconSize: config.smallTileIcons ? 24 : 32 * config.scaleFactor
-	readonly property int mediumIconSize: config.smallTileIcons ? 48 : 72 * config.scaleFactor
-	readonly property int largeIconSize: config.smallTileIcons ? 72 : 96 * config.scaleFactor
+	readonly property real tileIconSize:
+		Math.min(width, height) * config.tileIconSizePercent / 100
 
 	readonly property int labelAlignment: appObj.isGroup ? config.groupLabelAlignment : config.tileLabelAlignment
 
@@ -28,7 +27,7 @@ Rectangle {
 	states: [
 		State {
 			when: modelData.w == 1 && modelData.h >= 1
-			PropertyChanges { target: icon; size: smallIconSize }
+			PropertyChanges { target: icon; size: tileIconSize }
 			PropertyChanges { target: label; visible: false }
 		},
 		State {
@@ -47,11 +46,11 @@ Rectangle {
 		},
 		State {
 			when: (modelData.w >= 2 && modelData.h == 2) || (modelData.w == 2 && modelData.h >= 2)
-			PropertyChanges { target: icon; size: mediumIconSize }
+			PropertyChanges { target: icon; size: (0.7 * tileIconSize) }
 		},
 		State {
 			when: modelData.w >= 3 && modelData.h >= 3
-			PropertyChanges { target: icon; size: largeIconSize }
+			PropertyChanges { target: icon; size: (0.75 * tileIconSize) }
 		}
 	]
 
@@ -73,11 +72,11 @@ Rectangle {
 		anchors.verticalCenter: parent.verticalCenter
 		anchors.horizontalCenter: parent.horizontalCenter
 		// property int size: 72 // Just a default, overriden in State change
-		property int size: Math.min(parent.width, parent.height) / 2
+		property real size: Math.min(parent.width, parent.height) / 2
 		width: appObj.showIcon ? size : 0
 		height: appObj.showIcon ? size : 0
 		anchors.fill: appObj.iconFill ? parent : null
-		smooth: appObj.iconFill || config.smallTileIcons
+		smooth: true
 	}
 
 	PlasmaComponents3.Label {
