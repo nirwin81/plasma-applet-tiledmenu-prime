@@ -1,4 +1,5 @@
 import QtQuick
+import "Utils.js" as Utils
 
 ListModel {
 	id: resultModel
@@ -223,7 +224,7 @@ ListModel {
 		for (var index = 0; index < list.length; ++index)
 		{
 			var item = list[index]
-			if (favoriteId && item.favoriteId && item.favoriteId === favoriteId)
+			if (favoriteId && item.favoriteId && Utils.normAppId(item.favoriteId) === Utils.normAppId(favoriteId))
 				return item
 			if (url && item.url && item.url === url) 
 				return item
