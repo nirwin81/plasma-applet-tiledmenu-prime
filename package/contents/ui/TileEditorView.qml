@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Dialogs as QtDialogs
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
-import org.kde.iconthemes as KIconThemes // IconDialog
+import org.kde.iconthemes as KIconThemes
 
 ColumnLayout {
 	id: tileEditorView
@@ -62,7 +62,6 @@ ColumnLayout {
 			width: scrollView.availableWidth
 
 			TileEditorField {
-				// visible: appObj.isLauncher
 				title: i18n("Url")
 				key: 'url'
 			}
@@ -78,7 +77,6 @@ ColumnLayout {
 			TileEditorField {
 				id: iconField
 				title: i18n("Icon")
-				// placeholderText: appObj.appIcon ? appObj.appIcon.toString() : ''
 				key: 'icon'
 				checkedKey: 'showIcon'
 				checkedDefault: appObj.defaultShowIcon
@@ -86,11 +84,6 @@ ColumnLayout {
 				PlasmaComponents3.Button {
 					icon.name: "document-open"
 					onClicked: iconDialog.open()
-
-					KIconThemes.IconDialog {
-						id: iconDialog
-						onIconNameChanged: iconField.text = iconName
-					}
 				}
 			}
 
@@ -130,15 +123,24 @@ ColumnLayout {
 		}
 	}
 
+	// Moved to top level — nesting inside a Button crashes on Plasma 6.8
+	KIconThemes.IconDialog {
+		id: iconDialog
+		onIconNameChanged: iconField.text = iconName
+	}
+
 	function show() {
 		if (stackView.currentItem != tileEditorView) {
 			stackView.replace(tileEditorView)
 		}
 	}
 
-	function open(tile) {
+	function open(tileIndex) {
 		resetView()
-		tileEditorView.tile = tile
+		if (typeof tileIndex !== "number" || tileIndex < 0 || tileIndex >= tileGrid.tileModel.length) {
+			return
+		}
+		tileEditorView.tile = tileGrid.tileModel[tileIndex]
 		show()
 	}
 
@@ -162,11 +164,6 @@ ColumnLayout {
 		target: config.tileModel
 
 		function onLoaded() {
-			// Base64JsonString.save() will create a new JavaScript array [],
-			// and our current tile {} reference will be incorrect, which breaks the tile editor.
-			// We could keep a reference to the tile's index in the array, and make sure
-			// the tile's url did not change, but there's no guarantee we won't overwrite data
-			// during an Import, so just close the view.
 			tileEditorView.close()
 		}
 	}
