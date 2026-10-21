@@ -8,6 +8,10 @@ import "Utils.js" as Utils
 DropArea {
 	id: tileGrid
 
+	// ============================================================
+	// Grid Size Properties
+	// ============================================================
+
 	property int cellSize: 60 * config.scaleFactor
 	property real cellMargin: 3 * config.scaleFactor
 	property real cellPushedMargin: 6 * config.scaleFactor
@@ -24,14 +28,16 @@ DropArea {
 	property int columns: Math.max(minColumns, maxColumn)
 	property int rows: Math.max(minRows, maxRow)
 
+	// ============================================================
+	// Drag State Properties
+	// ============================================================
 
-	//--- Drag and Drop properties
 	property bool isDragging: false
 	property var addedItem: null
-	readonly property bool adding: addedItem
+	readonly property bool adding: addedItem !== null
 	property int draggedIndex: -1
 	readonly property var draggedItem: draggedIndex >= 0 ? tileModel[draggedIndex] : null
-	property bool editing: isDragging && draggedItem || adding
+	property bool editing: (isDragging && draggedItem) || adding
 	property int dropHoverX: -1
 	property int dropHoverY: -1
 	property int dropOffsetX: 0
@@ -39,455 +45,708 @@ DropArea {
 	readonly property int dropWidth: draggedItem ? draggedItem.w : addedItem ? addedItem.w : 0
 	readonly property int dropHeight: draggedItem ? draggedItem.h : addedItem ? addedItem.h : 0
 	property bool canDrop: false
-	readonly property bool hasDrag: tileGrid.editing && dropHoverX >= 0 && dropHoverY >= 0
-	readonly property bool isDraggingGroup: hasDrag && draggedItem && draggedItem.tileType == "group"
-	readonly property var draggedGroupRect: {
-		if (isDraggingGroup) {
-			return getGroupAreaRect(draggedItem)
-		} else {
-			return null
-		}
-	}
+	readonly property bool hasDrag: editing && dropHoverX >= 0 && dropHoverY >= 0
+	readonly property bool isDraggingGroup: hasDrag && draggedItem && draggedItem.tileType === "group"
 	readonly property bool dynamicPusher: config.dynamicTilePusher
 
-	//--- Drag and Drop events
-	// onContainsDragChanged: console.log('containsDrag', containsDrag)
-	onEntered: drag => {
-		// console.log('onEntered', drag)
-		dragTick(drag)
-	}
-	onPositionChanged: drag => {
-		// console.log('onPositionChanged', drag)
-		dragTick(drag)
-	}
-	onExited: drag => {
-		// console.log('onExited')
-		resetDragHover()
-	}
+	property var draggedGroupMembers: []
+	property int draggedGroupContentHeight: 0
+	property var draggedItemOriginalGroup: null
+
+	readonly property var draggedGroupRect: isDraggingGroup ? getGroupContentRect(draggedItem) : null
+
+	// ============================================================
+	// Drop Event Handlers
+	// ============================================================
+
+	onEntered: drag => { dragTick(drag) }
+	onPositionChanged: drag => { dragTick(drag) }
+	onExited: drag => { cancelDragHover() }
 	onDropped: drop => {
 		dragTick(drop)
-		console.log('onDropped', drop)
 		if (canDrop) {
 			if (draggedItem) {
-				tileGrid.moveTile(draggedItem, dropHoverX, dropHoverY)
-				tileGrid.resetDrag()
-				// event.accept(Qt.MoveAction)
+				commitMove(draggedItem, dropHoverX, dropHoverY)
 			} else if (addedItem) {
 				addedItem.x = dropHoverX
 				addedItem.y = dropHoverY
-				tileGrid.tileModel.push(addedItem)
-				tileGrid.tileModelChanged()
-				tileGrid.resetDrag()
+				tileModel.push(addedItem)
+				tileModelChanged()
 			}
+			clearAllSnapbacks()
+		} else {
+			snapbackAll()
+			clearAllSnapbacks()
 		}
-		for (var index = 0; index < pushedTiles.length; ++index) {
-			if (pushedTiles[index]) {
-				console.log('Resetting pushedFrom values 1')
-				clearPushedFrom(pushedTiles[index])
-			}
-		}
-		pushedTiles = []
-		tileGrid.resetDrag()
+		resetDrag()
 	}
 
-	// Drag and Drop functions
-	function resetDragHover() {
-		dropHoverX = -1
-		dropHoverY = -1
-		scrollUpArea.containsDrag = false
-		scrollDownArea.containsDrag = false
-		addedItem = null
-	}
-	function resetDrag() {
-		// Restore coordinate bindings for group members before draggedIndex is cleared
-		for (var i = 0; i < draggedGroupMembers.length; i++) {
-			var idx = tileModel.indexOf(draggedGroupMembers[i])
-			if (idx >= 0) {
-				var memberItem = tileModelRepeater.itemAt(idx)
-				if (memberItem) memberItem.fixCoordinateBindings()
-			}
-		}
-		draggedGroupMembers = []
-		resetDragHover()
-		isDragging = false
-		draggedIndex = -1
-	}
-	property var draggedItemOriginalGroup: null
-	property var draggedGroupMembers: []
-	property int draggedGroupContentHeight: 0
+	// ============================================================
+	// Section 1: Geometry Helpers
+	// ============================================================
 
-	function startDrag(index) {
-		draggedIndex = index
-		dropHoverX = draggedItem.x
-		dropHoverY = draggedItem.y
-		isDragging = true
-		draggedItemOriginalGroup = null
-		for (var i = 0; i < tileModel.length; ++i) {
-			var t = tileModel[i]
-			if (t.tileType === 'group' && isTileInGroup(t, draggedItem)) {
-				draggedItemOriginalGroup = t
-				break
-			}
-		}
-		// Capture group members by reference at drag start (before any positions change)
-		draggedGroupMembers = []
-		draggedGroupContentHeight = 0
-		if (draggedItem && draggedItem.tileType === 'group') {
-			var memberArea = getGroupAreaRect(draggedItem)
-			draggedGroupContentHeight = memberArea.h
-			for (var i = 0; i < tileModel.length; ++i) {
-				if (i === draggedIndex) continue
-				if (tileWithin(tileModel[i], memberArea.x1, memberArea.y1, memberArea.x2, memberArea.y2)) {
-					draggedGroupMembers.push(tileModel[i])
-				}
-			}
-		}
+	function makeRect(x, y, w, h) {
+		return { x1: x, y1: y, x2: x + w - 1, y2: y + h - 1 }
 	}
 
-	function tileWithin(tile, x1, y1, x2, y2) {
-		var tileX2 = tile.x + tile.w - 1
-		var tileY2 = tile.y + tile.h - 1
-		return (x1 <= tileX2
-			&& tile.x <= x2
-			&& y1 <= tileY2
-			&& tile.y <= y2
-		)
-		return isAreaWithinArea(tile.x, tile.y, tile.x+tile.w-1, tile.y+tile.h-1, x1, y1, x2, y2)
+	function rectsOverlap(a, b) {
+		return a.x1 <= b.x2 && b.x1 <= a.x2 && a.y1 <= b.y2 && b.y1 <= a.y2
 	}
 
-	function isAreaWithinArea(a1x1, a1y1, a1x2, a1y2, a2x1, a2y1, a2x2, a2y2) {
-		return (a2x1 <= a1x2
-			&& a1x1 <= a2x2
-			&& a2y1 <= a1y2
-			&& a1y1 <= a2y2
-		)
-	}
+	// ============================================================
+	// Section 2: Group Utilities
+	// ============================================================
 
-	function getGroupAreaRect(groupTile, tileToExclude) {
+	function getGroupContentRect(groupTile) {
+		// Returns the bounding rect of all content tiles below the group header.
+		// Stops at the first empty row within the group's column span, or at another group header.
 		if (!groupTile) {
-			console.log('groupTile was invalid when calculating area in getGroupAreaRect')
 			return { x1: 0, y1: 0, x2: -1, y2: -1, w: 0, h: 0 }
 		}
-		var x1 = groupTile.x
-		var x2 = groupTile.x + groupTile.w - 1
-		var y1 = groupTile.y + groupTile.h
-		// Build a set of rows that are occupied within the group's column span.
-		// A row is occupied if any tile covers at least one cell in [x1, x2] on that row.
+
+		var colX1 = groupTile.x
+		var colX2 = groupTile.x + groupTile.w - 1
+		var startY = groupTile.y + groupTile.h
+
 		var occupiedRows = {}
-		var groupHeaderRows = {}
 		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (isNaN(tile.x) || isNaN(tile.y) || tile.x === null || tile.y === null) continue
-			if (tile === groupTile) continue
-			if (tileToExclude !== null && tile === tileToExclude) continue
-			// Check if tile overlaps the group's column span
-			if (tile.x <= x2 && tile.x + tile.w - 1 >= x1 && tile.y >= y1) {
-				for (var row = tile.y; row < tile.y + tile.h; row++) {
-					occupiedRows[row] = true
-				}
-				if (tile.tileType === 'group') {
-					for (var row = tile.y; row < tile.y + tile.h; row++) {
-						groupHeaderRows[row] = true
-					}
-				}
+			var t = tileModel[i]
+			if (t === groupTile) continue
+			if (i === draggedIndex) continue
+			if (draggedGroupMembers.length > 0 && draggedGroupMembers.indexOf(t) >= 0) continue
+			if (isNaN(t.x) || isNaN(t.y)) continue
+			if (t.x > colX2 || t.x + t.w - 1 < colX1) continue
+			if (t.y < startY) continue
+			if (t.tileType === 'group') continue  // Another group header is a boundary
+
+			for (var row = t.y; row < t.y + t.h; row++) {
+				occupiedRows[row] = true
 			}
 		}
 
-		// Walk down row by row from y1; stop at the first blank row or group header row
-		var y2 = y1 - 1
-		for (var row = y1; occupiedRows[row] && !groupHeaderRows[row]; row++) {
+		// Walk down from startY; stop at first empty row
+		var y2 = startY - 1
+		for (var row = startY; occupiedRows[row]; row++) {
 			y2 = row
 		}
 
+		if (y2 < startY) {
+			return { x1: colX1, y1: startY, x2: colX2, y2: startY - 1, w: colX2 - colX1 + 1, h: 0 }
+		}
 		return {
-			x1: x1,
-			y1: y1,
-			x2: x2,
-			y2: y2,
-			w: x2 - x1 + 1,
-			h: y2 - y1 + 1,
+			x1: colX1, y1: startY,
+			x2: colX2, y2: y2,
+			w: colX2 - colX1 + 1, h: y2 - startY + 1,
 		}
 	}
 
-	function moveGroupContents(groupTile, deltaX, deltaY) {
-		if (groupTile === draggedItem && draggedGroupMembers.length > 0) {
-			for (var mi = 0; mi < draggedGroupMembers.length; mi++) {
-				draggedGroupMembers[mi].x += deltaX
-				draggedGroupMembers[mi].y += deltaY
-			}
-			return
-		}
-
-		var area = getGroupAreaRect(groupTile)
-
-		// Move tiles below group label
-		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (tile === draggedItem) continue
-			if (tileWithin(tile, area.x1, area.y1, area.x2, area.y2)) {
-				tile.x += deltaX
-				tile.y += deltaY
-			}
-		}
-
-		// We call this in moveTile so no need to duplicate work.
-		// tileGrid.tileModelChanged()
+	// Legacy alias used by AppObject.qml
+	function getGroupAreaRect(groupTile, tileToExclude) {
+		return getGroupContentRect(groupTile)
 	}
 
-	function moveGroupContentsAnimated(groupTile, deltaX, deltaY) {
-		var area = getGroupAreaRect(groupTile, draggedItem)
-
-		// Move tiles below group label
-		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (tile === draggedItem) continue
-			if (draggedGroupMembers.indexOf(tile) >= 0) continue
-			if (tile.y >= area.y1 && tileWithin(tile, area.x1, area.y1, area.x2, area.y2)) {
-				var item = i >= 0 ? tileModelRepeater.itemAt(i) : null
-				if (item) {
-					item.targetX = (tile.x + deltaX) * cellBoxSize
-					item.targetY = (tile.y + deltaY) * cellBoxSize
-				}
-				tile.x = tile.x + deltaX
-				tile.y = tile.y + deltaY
-			}
-		}
-
-		// We call this in moveTile so no need to duplicate work.
-		// tileGrid.tileModelChanged()
+	function getGroupFullHeight(groupTile) {
+		var content = getGroupContentRect(groupTile)
+		return groupTile.h + content.h
 	}
 
+	function isTileInGroup(groupTile, tile) {
+		// Per spec: tile's leftmost column within group's column span,
+		// and tile's top is within the group's connected content rows.
+		if (!groupTile || !tile || tile === groupTile) return false
+		if (tile.x < groupTile.x || tile.x > groupTile.x + groupTile.w - 1) return false
+		var content = getGroupContentRect(groupTile)
+		return content.h > 0 && tile.y >= content.y1 && tile.y <= content.y2
+	}
 
 	function getGroupForTile(tile) {
+		if (!tile) return null
 		for (var i = 0; i < tileModel.length; i++) {
 			var t = tileModel[i]
-			if (t.tileType === 'group' && isTileInGroup(t, tile)) {
+			if (t.tileType === 'group' && t !== tile && isTileInGroup(t, tile)) {
 				return t
 			}
 		}
 		return null
 	}
 
-	function isTileInGroup(groupTile, tile) {
-		var area = getGroupAreaRect(groupTile)
+	function getHoverGroup(hoverX, hoverY, hoverH) {
+		// Returns the group (if any) whose column span contains hoverX and
+		// whose area (header + content) overlaps the hover Y range.
 		for (var i = 0; i < tileModel.length; i++) {
-			var tileInGroup = tileModel[i]
-			if (tileInGroup.y >= area.y1 && tileWithin(tileInGroup, area.x1, area.y1, area.x2, area.y2)) {
-				if (tileInGroup == tile) {
-					return true
+			var t = tileModel[i]
+			if (i === draggedIndex) continue
+			if (t.tileType !== 'group') continue
+			if (hoverX < t.x || hoverX > t.x + t.w - 1) continue
+			var groupBottom = t.y + getGroupFullHeight(t) - 1
+			if (hoverY > groupBottom || hoverY + hoverH - 1 < t.y) continue
+			return t
+		}
+		return null
+	}
+
+	// ============================================================
+	// Section 3: Hitbox (Spatial Index)
+	// ============================================================
+
+	property var hitbox: []  // hitbox[y][x] = tile reference (or undefined)
+	property var hitBox: hitbox  // Legacy alias
+
+	function rebuildHitbox() {
+		var maxC = 0
+		var maxR = 0
+		var maxW = 1
+		var maxH = 1
+		for (var i = 0; i < tileModel.length; i++) {
+			var t = tileModel[i]
+			if (isNaN(t.x) || isNaN(t.y) || t.x === null || t.y === null) continue
+			maxC = Math.max(maxC, t.x + t.w)
+			maxR = Math.max(maxR, t.y + t.h)
+			maxW = Math.max(maxW, t.w)
+			maxH = Math.max(maxH, t.h)
+		}
+
+		if (draggedItem) maxR += draggedItem.h  // Extra rows to allow drag-to-bottom
+
+		maxColumn = maxC
+		maxRow = maxR
+		maxWidth = maxW
+		maxHeight = maxH
+
+		var cols = Math.max(minColumns, maxC)
+		var numRows = Math.max(minRows, maxR)
+
+		var hb = []
+		for (var j = 0; j < numRows; j++) {
+			hb.push(new Array(cols))
+		}
+
+		for (var i = 0; i < tileModel.length; i++) {
+			if (i === draggedIndex) continue
+			if (draggedGroupMembers.length > 0 && draggedGroupMembers.indexOf(tileModel[i]) >= 0) continue
+			var t = tileModel[i]
+			if (isNaN(t.x) || isNaN(t.y) || t.x === null || t.y === null) continue
+			for (var j = t.y; j < t.y + t.h && j < numRows; j++) {
+				for (var k = t.x; k < t.x + t.w && k < cols; k++) {
+					hb[j][k] = t
 				}
 			}
-
 		}
-		return false
+
+		hitbox = hb
 	}
 
-	function moveTile(tile, cellX, cellY) {
-		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) {
-			return
-		}
-		if (tile.tileType == "group") {
-			moveGroupContents(tile, cellX - tile.x, cellY - tile.y)
-		}
-		tile.x = cellX
-		tile.y = cellY
-		clearPushedFrom(tile)
-		tileGrid.tileModelChanged()
+	function getTileAtCell(cx, cy) {
+		if (cy < 0 || cy >= hitbox.length) return null
+		if (!hitbox[cy] || cx < 0 || cx >= hitbox[cy].length) return null
+		return hitbox[cy][cx] || null
 	}
 
-	property var pushedTiles: new Array(32)
+	// Legacy alias
+	function getTileAt(cx, cy) { return getTileAtCell(cx, cy) }
 
-	// A tile only has pushedFromX/Y while it's displaced by the current drag.
-	function clearPushedFrom(tile) {
-		delete tile.pushedFromX
-		delete tile.pushedFromY
-	}
-
-	function moveTileAnimated(tile, cellX, cellY) {
-		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) {
-			return
-		}
-		if (tile.tileType == "group") {
-			moveGroupContentsAnimated(tile, cellX - tile.x, cellY - tile.y)
-		}
-		var idx = tileModel.indexOf(tile)
-		var item = idx >= 0 ? tileModelRepeater.itemAt(idx) : null
-		if (item) {
-			item.targetX = cellX * cellBoxSize
-			item.targetY = cellY * cellBoxSize
-		}
-		tile.x = cellX
-		tile.y = cellY
-		updateSize()
-	}
-
-	function pushTile(tile, cellX, cellY) {
-		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) {
-			return
-		}
-		if (tile.pushedFromX === undefined) tile.pushedFromX = tile.x
-		if (tile.pushedFromY === undefined) tile.pushedFromY = tile.y
-		if (tile.tileType == "group") {
-			moveGroupContentsAnimated(tile, cellX - tile.x, cellY - tile.y)
-		}
-		var idx = tileModel.indexOf(tile)
-		var item = idx >= 0 ? tileModelRepeater.itemAt(idx) : null
-		if (item) {
-			item.targetX = cellX * cellBoxSize
-			item.targetY = cellY * cellBoxSize	
-		}
-		tile.x = cellX
-		tile.y = cellY
-		updateSize()
-	}
-
-	function snapbackTile(tile) {
-		if (!tile) {
-			return
-		}
-		if (tile.pushedFromX === undefined || tile.pushedFromY === undefined) {
-			return
-		}
-		var groupToIgnore = tile.tileType === 'group' ? tile : null
-		if (groupToIgnore === null && isTileInGroup(tile)) {
-			groupToIgnore = getGroupForTile(tile)
-		}
-		var snapAreaRect = (tile.tileType === 'group') ? getGroupAreaRect(tile, draggedItem) : null
-		var snapCheckH = tile.h + (snapAreaRect ? snapAreaRect.h : 0)
-
-		if (!hits(tile.pushedFromX, tile.pushedFromY, tile.w, snapCheckH, tile, groupToIgnore, null)) {
-			moveTileAnimated(tile, tile.pushedFromX, tile.pushedFromY)
-			clearPushedFrom(tile)
-			pushedTiles.splice(pushedTiles.indexOf(tile), 1)
-			updateSize()
-			return
-		}
-
-		// Find out how far back the tile can snap
-		var maxXDelta = tile.pushedFromX - tile.x
-		var maxYDelta = tile.pushedFromY - tile.y
-		var xDeltaStep = 0
-		var yDeltaStep = 0
-		if (maxXDelta < 0) xDeltaStep = -1
-		else if (maxXDelta > 0) xDeltaStep = 1
-		else if (maxYDelta < 0) yDeltaStep = -1
-		else if (maxYDelta > 0) yDeltaStep = 1;
-		var maxDistance = Math.max(Math.abs(maxXDelta), Math.abs(maxYDelta))		
-		var distanceMoved = 0
-		var xPosToUse = -1
-		var yPosToUse = -1
-		while (distanceMoved <= maxDistance) {
-			var testX = tile.x + xDeltaStep * (distanceMoved + 1)
-			var testY = tile.y + yDeltaStep * (distanceMoved + 1)
-
-			// Did we hit something?
-			if (hits(testX, testY, tile.w, snapCheckH, tile, groupToIgnore, null)) {
-				//Yes? Can't go any further then
-				break;
-			} else {
-				xPosToUse = testX
-				yPosToUse = testY
+	function isRectFree(x, y, w, h, ignoreSet) {
+		// Returns true if all cells in the rect are empty or occupied only by tiles in ignoreSet
+		// (groups in ignoreSet also implicitly cover their members)
+		for (var j = y; j < y + h; j++) {
+			for (var k = x; k < x + w; k++) {
+				if (k < 0 || j < 0) return false
+				if (j >= hitbox.length || !hitbox[j] || k >= hitbox[j].length) continue
+				var t = hitbox[j][k]
+				if (!t) continue
+				if (!ignoreSet) return false
+				if (ignoreSet.indexOf(t) >= 0) continue
+				// Check if t is a member of any ignored group
+				var ignored = false
+				for (var ig = 0; ig < ignoreSet.length; ig++) {
+					if (ignoreSet[ig].tileType === 'group' && isTileInGroup(ignoreSet[ig], t)) {
+						ignored = true
+						break
+					}
+				}
+				if (!ignored) return false
 			}
-
-			++distanceMoved
 		}
-
-		// Snap it back to the appropriate place
-		if (xPosToUse !== -1 && yPosToUse !== -1) {
-			moveTileAnimated(tile, xPosToUse, yPosToUse)
-		}
-		updateSize()
+		return true
 	}
 
-	// QQuickDropEvent
-	// https://github.com/qt/qtdeclarative/blob/a4aa8d9ade44d75cb5a1d84bd7c1773fadc73095/src/quick/items/qquickdroparea_p.h#L63
+	// ============================================================
+	// Section 4: Animation
+	// ============================================================
+
+	function animateTileTo(tile, newX, newY) {
+		if (!tile || isNaN(newX) || isNaN(newY)) return
+		var deltaX = newX - tile.x
+		var deltaY = newY - tile.y
+		if (deltaX === 0 && deltaY === 0) return
+
+		if (tile.tileType === 'group') {
+			animateGroupMembersBy(tile, deltaX, deltaY)
+		}
+
+		var idx = tileModel.indexOf(tile)
+		var item = idx >= 0 ? tileModelRepeater.itemAt(idx) : null
+		if (item) {
+			item.targetX = newX * cellBoxSize
+			item.targetY = newY * cellBoxSize
+		}
+		tile.x = newX
+		tile.y = newY
+		rebuildHitbox()
+	}
+
+	function animateGroupMembersBy(groupTile, deltaX, deltaY) {
+		// Animate all member tiles of a group by (deltaX, deltaY)
+		if (groupTile === draggedItem && draggedGroupMembers.length > 0) {
+			for (var i = 0; i < draggedGroupMembers.length; i++) {
+				var m = draggedGroupMembers[i]
+				var idx = tileModel.indexOf(m)
+				var item = idx >= 0 ? tileModelRepeater.itemAt(idx) : null
+				if (item) {
+					item.targetX = (m.x + deltaX) * cellBoxSize
+					item.targetY = (m.y + deltaY) * cellBoxSize
+				}
+				m.x += deltaX
+				m.y += deltaY
+			}
+			return
+		}
+
+		for (var i = 0; i < tileModel.length; i++) {
+			var t = tileModel[i]
+			if (t === groupTile || t === draggedItem) continue
+			if (draggedGroupMembers.indexOf(t) >= 0) continue
+			if (!isTileInGroup(groupTile, t)) continue
+			var item = tileModelRepeater.itemAt(i)
+			if (item) {
+				item.targetX = (t.x + deltaX) * cellBoxSize
+				item.targetY = (t.y + deltaY) * cellBoxSize
+			}
+			t.x += deltaX
+			t.y += deltaY
+		}
+	}
+
+	// ============================================================
+	// Section 5: Push Tracking
+	// ============================================================
+
+	property var pushedItems: []  // Array of { tile, origX, origY }
+
+	function getPushedEntry(tile) {
+		for (var i = 0; i < pushedItems.length; i++) {
+			if (pushedItems[i].tile === tile) return pushedItems[i]
+		}
+		return null
+	}
+
+	function recordPush(tile) {
+		// Save tile's current position as its pre-push origin (only on first push)
+		if (!getPushedEntry(tile)) {
+			pushedItems.push({ tile: tile, origX: tile.x, origY: tile.y })
+		}
+	}
+
+	// ============================================================
+	// Section 6: Push Logic
+	// ============================================================
+
+	function buildIgnoreSet(tile) {
+		// The set of tiles that should be ignored when checking if a push destination is free
+		var ignore = [tile]
+		if (tile.tileType === 'group') {
+			for (var i = 0; i < tileModel.length; i++) {
+				if (isTileInGroup(tile, tileModel[i])) ignore.push(tileModel[i])
+			}
+		}
+		return ignore
+	}
+
+	function findPushSteps(tile, effectiveH, direction, avoidRect, ignoreSet) {
+		// Returns the minimum number of steps to push tile in the given direction
+		// to a free position (not overlapping avoidRect). Returns -1 if not possible.
+		var tx = tile.x, ty = tile.y
+		var tw = tile.w
+
+		for (var steps = 1; steps <= 64; steps++) {
+			var nx = tx, ny = ty
+			if (direction === 'right') nx = tx + steps
+			else if (direction === 'left') nx = tx - steps
+			else if (direction === 'up') ny = ty - steps
+			else ny = ty + steps  // down
+
+			// Boundary checks (grid does not expand horizontally)
+			if (nx < 0 || ny < 0) return -1
+			if ((direction === 'right') && nx + tw > columns) return -1
+			if ((direction === 'left') && nx < 0) return -1
+			if ((direction === 'up') && ny < 0) return -1
+			// Down: no upper bound (grid extends vertically)
+
+			// Skip positions that overlap the avoid area
+			if (avoidRect && rectsOverlap(makeRect(nx, ny, tw, effectiveH), avoidRect)) continue
+
+			if (isRectFree(nx, ny, tw, effectiveH, ignoreSet)) {
+				return steps
+			}
+		}
+		return -1
+	}
+
+	function findDownPushSteps(tile, effectiveH, avoidRect) {
+		// Down push is always possible (grid extends); find min steps clear of avoidRect.
+		if (!avoidRect) return 1
+		for (var steps = 1; steps <= 64; steps++) {
+			if (!rectsOverlap(makeRect(tile.x, tile.y + steps, tile.w, effectiveH), avoidRect)) {
+				return steps
+			}
+		}
+		return 1
+	}
+
+	function tryPushItem(tile, avoidRect) {
+		// Try to push tile in the best direction (shortest distance, tiebreak R>L>U>D).
+		// Returns true if the push succeeded.
+		var effectiveH = tile.tileType === 'group' ? getGroupFullHeight(tile) : tile.h
+		var ignoreSet = buildIgnoreSet(tile)
+
+		var rightSteps = findPushSteps(tile, effectiveH, 'right', avoidRect, ignoreSet)
+		var leftSteps  = findPushSteps(tile, effectiveH, 'left',  avoidRect, ignoreSet)
+		var upSteps    = findPushSteps(tile, effectiveH, 'up',    avoidRect, ignoreSet)
+		var downSteps  = findDownPushSteps(tile, effectiveH, avoidRect)
+
+		// Pick shortest distance; order (R, L, U, D) breaks ties
+		var best = null
+		var candidates = [
+			{ dir: 'right', steps: rightSteps },
+			{ dir: 'left',  steps: leftSteps  },
+			{ dir: 'up',    steps: upSteps    },
+			{ dir: 'down',  steps: downSteps  },
+		]
+		for (var c = 0; c < candidates.length; c++) {
+			var cand = candidates[c]
+			if (cand.steps < 0) continue
+			if (best === null || cand.steps < best.steps) {
+				best = cand
+			}
+		}
+
+		if (!best) return false
+
+		recordPush(tile)
+
+		var nx = tile.x, ny = tile.y
+		if (best.dir === 'right')     nx += best.steps
+		else if (best.dir === 'left') nx -= best.steps
+		else if (best.dir === 'up')   ny -= best.steps
+		else {
+			// Down: cascade push everything below the tile's current extent
+			ny += best.steps
+			var fromY = tile.y + effectiveH
+			cascadePushDown(tile.x, tile.x + tile.w - 1, fromY, best.steps, ignoreSet)
+		}
+
+		animateTileTo(tile, nx, ny)
+		return true
+	}
+
+	function cascadePushDown(colX1, colX2, fromY, delta, ignoreSet) {
+		// Push all tiles in columns [colX1..colX2] whose effective bottom is at y >= fromY
+		// down by delta. If a tile is a group member, push the whole group instead.
+		var toMove = []
+
+		for (var i = 0; i < tileModel.length; i++) {
+			var t = tileModel[i]
+			if (i === draggedIndex) continue
+			if (draggedGroupMembers.indexOf(t) >= 0) continue
+			if (ignoreSet && ignoreSet.indexOf(t) >= 0) continue
+			if (t.x > colX2 || t.x + t.w - 1 < colX1) continue  // Outside column range
+
+			// Check if this tile (or its group) has any part at y >= fromY
+			var itemToMove = t
+			if (t.tileType !== 'group') {
+				var grp = getGroupForTile(t)
+				if (grp) {
+					if (ignoreSet && ignoreSet.indexOf(grp) >= 0) continue
+					itemToMove = grp
+				}
+			}
+			// Effective bottom of itemToMove
+			var effH = itemToMove.tileType === 'group' ? getGroupFullHeight(itemToMove) : itemToMove.h
+			if (itemToMove.y + effH - 1 < fromY) continue  // Entirely above cascade range
+
+			if (toMove.indexOf(itemToMove) < 0) toMove.push(itemToMove)
+		}
+
+		// Move bottom-most items first to avoid cascading into each other
+		toMove.sort(function(a, b) { return b.y - a.y })
+
+		for (var i = 0; i < toMove.length; i++) {
+			recordPush(toMove[i])
+			animateTileTo(toMove[i], toMove[i].x, toMove[i].y + delta)
+		}
+	}
+
+	// ============================================================
+	// Section 7: Collision Detection
+	// ============================================================
+
+	function findFirstConflict(x, y, w, h, tileGroupToIgnore) {
+		// Returns the first tile in the hitbox that occupies the rect (x, y, w, h)
+		// and is not the dragged group header or one of its pre-captured members.
+		for (var j = y; j < y + h; j++) {
+			if (j < 0 || j >= hitbox.length) continue
+			for (var k = x; k < x + w; k++) {
+				if (k < 0 || !hitbox[j] || k >= hitbox[j].length) continue
+				var hitTile = hitbox[j][k]
+				if (!hitTile) continue
+				if (tileGroupToIgnore) {
+					if (hitTile === tileGroupToIgnore) continue
+					if (draggedGroupMembers.indexOf(hitTile) >= 0) continue
+					// Note: do NOT use isTileInGroup(tileGroupToIgnore, hitTile) here —
+					// that check uses the dragged group's stale model position and would
+					// falsely skip tiles that were pushed into the dragged group's original
+					// area, allowing overlaps.
+				}
+				return hitTile
+			}
+		}
+		return null
+	}
+
+	function resolvePushTarget(hitTile, hoverGroupTile) {
+		// Determines the actual item to push when hitTile is in the way.
+		// - Dragging a group: push other groups as whole units; push standalone tiles individually.
+		// - Hover inside a group: push tiles within that group individually; push other groups whole.
+		// - Hover outside any group: push whole groups; push standalone tiles individually.
+		if (isDraggingGroup) {
+			if (hitTile.tileType === 'group') return hitTile
+			return getGroupForTile(hitTile) || hitTile
+		}
+
+		if (hoverGroupTile) {
+			if (isTileInGroup(hoverGroupTile, hitTile)) return hitTile
+			if (hitTile.tileType === 'group') return hitTile
+			return getGroupForTile(hitTile) || hitTile
+		}
+
+		if (hitTile.tileType === 'group') return hitTile
+		return getGroupForTile(hitTile) || hitTile
+	}
+
+	function checkAndPushCollisions(x, y, w, h, tileGroupToIgnore) {
+		// Checks if the rect (x, y, w, h) is clear of obstacles.
+		// If dynamicPusher is enabled, tries to push conflicting items.
+		// Returns true if the area is blocked (cannot be cleared).
+		if (!dynamicPusher) {
+			return findFirstConflict(x, y, w, h, tileGroupToIgnore) !== null
+		}
+
+		var avoidRect = makeRect(x, y, w, h)
+		var hoverGroupTile = getHoverGroup(x, y, h)
+
+		var maxIterations = 20
+		for (var iter = 0; iter < maxIterations; iter++) {
+			var conflict = findFirstConflict(x, y, w, h, tileGroupToIgnore)
+			if (!conflict) return false  // Area is clear
+
+			var itemToPush = resolvePushTarget(conflict, hoverGroupTile)
+			if (!tryPushItem(itemToPush, avoidRect)) {
+				return true  // Push failed — area is blocked
+			}
+			// Push succeeded; hitbox was rebuilt in animateTileTo — retry
+		}
+
+		return true  // Exceeded iterations — treat as blocked
+	}
+
+	// Legacy compatibility
+	function hits(x, y, w, h, tileToIgnore, tileGroupToIgnore, allowPushing) {
+		return checkAndPushCollisions(x, y, w, h, tileGroupToIgnore)
+	}
+
+	function isAreaWithinArea(a1x1, a1y1, a1x2, a1y2, a2x1, a2y1, a2x2, a2y2) {
+		return a2x1 <= a1x2 && a1x1 <= a2x2 && a2y1 <= a1y2 && a1y1 <= a2y2
+	}
+
+	function tileWithin(tile, x1, y1, x2, y2) {
+		return tile.x <= x2 && tile.x + tile.w - 1 >= x1 && tile.y <= y2 && tile.y + tile.h - 1 >= y1
+	}
+
+	// ============================================================
+	// Section 8: Snapback
+	// ============================================================
+
+	function attemptSnapback(entry) {
+		// Try to return a pushed tile toward its original position.
+		// Removes entry from pushedItems if fully snapped back.
+		var tile = entry.tile
+		var origX = entry.origX, origY = entry.origY
+
+		if (tile.x === origX && tile.y === origY) {
+			pushedItems.splice(pushedItems.indexOf(entry), 1)
+			return
+		}
+
+		var effectiveH = tile.tileType === 'group' ? getGroupFullHeight(tile) : tile.h
+		var ignoreSet = buildIgnoreSet(tile)
+
+		// The dragged item's current rect is "forbidden" — snapped tile must not land there
+		var forbiddenRect = null
+		if (hasDrag) {
+			var dragH = dropHeight
+			if (draggedItem && draggedItem.tileType === 'group' && draggedGroupContentHeight > 0) {
+				dragH += draggedGroupContentHeight
+			}
+			forbiddenRect = makeRect(dropHoverX, dropHoverY, dropWidth, dragH)
+		}
+
+		// Try full snapback first
+		if (isRectFree(origX, origY, tile.w, effectiveH, ignoreSet)) {
+			if (!forbiddenRect || !rectsOverlap(makeRect(origX, origY, tile.w, effectiveH), forbiddenRect)) {
+				animateTileTo(tile, origX, origY)
+				pushedItems.splice(pushedItems.indexOf(entry), 1)
+				return
+			}
+		}
+
+		// Try partial snapback: scan all 4 directions for the reachable position
+		// that is closest (Manhattan distance) to the origin.
+		var bestX = tile.x, bestY = tile.y
+		var bestDist = Math.abs(tile.x - origX) + Math.abs(tile.y - origY)
+
+		var snapDirs = [
+			{ dx:  1, dy:  0 },
+			{ dx: -1, dy:  0 },
+			{ dx:  0, dy: -1 },
+			{ dx:  0, dy:  1 },
+		]
+		for (var d = 0; d < snapDirs.length; d++) {
+			var dx = snapDirs[d].dx, dy = snapDirs[d].dy
+			for (var s = 1; s <= 64; s++) {
+				var testX = tile.x + dx * s
+				var testY = tile.y + dy * s
+				if (testX < 0 || testY < 0 || testX + tile.w > columns) break
+				if (!isRectFree(testX, testY, tile.w, effectiveH, ignoreSet)) break
+				if (forbiddenRect && rectsOverlap(makeRect(testX, testY, tile.w, effectiveH), forbiddenRect)) break
+				var dist = Math.abs(testX - origX) + Math.abs(testY - origY)
+				if (dist < bestDist) {
+					bestDist = dist
+					bestX = testX
+					bestY = testY
+				}
+			}
+		}
+
+		if (bestX !== tile.x || bestY !== tile.y) {
+			animateTileTo(tile, bestX, bestY)
+			if (bestX === origX && bestY === origY) {
+				pushedItems.splice(pushedItems.indexOf(entry), 1)
+			}
+		}
+	}
+
+	function attemptAllSnapbacks() {
+		// Iterate in reverse so removals during attemptSnapback don't skip entries
+		for (var i = pushedItems.length - 1; i >= 0; i--) {
+			if (pushedItems[i]) attemptSnapback(pushedItems[i])
+		}
+	}
+
+	function snapbackAll() {
+		// Immediately return all pushed tiles to their original positions
+		for (var i = 0; i < pushedItems.length; i++) {
+			var entry = pushedItems[i]
+			animateTileTo(entry.tile, entry.origX, entry.origY)
+		}
+	}
+
+	function clearAllSnapbacks() {
+		pushedItems = []
+	}
+
+	// ============================================================
+	// Section 9: Drag Lifecycle
+	// ============================================================
+
+	function startDrag(index) {
+		draggedIndex = index
+		dropHoverX = draggedItem.x
+		dropHoverY = draggedItem.y
+		isDragging = true
+		draggedItemOriginalGroup = getGroupForTile(draggedItem)
+
+		draggedGroupMembers = []
+		draggedGroupContentHeight = 0
+		if (draggedItem.tileType === 'group') {
+			var contentRect = getGroupContentRect(draggedItem)
+			draggedGroupContentHeight = contentRect.h
+			for (var i = 0; i < tileModel.length; i++) {
+				if (i === draggedIndex) continue
+				if (isTileInGroup(draggedItem, tileModel[i])) {
+					draggedGroupMembers.push(tileModel[i])
+				}
+			}
+		}
+
+		rebuildHitbox()
+	}
+
 	function dragTick(event) {
-		//console.log('dragTick', event.x, event.y)
 		var dragX = event.x + dropOffsetX
 		var dragY = event.y + dropOffsetY + scrollView.scrollTop
 		var modelX = Math.max(0, Math.round(dragX / cellBoxSize - dropWidth / 2))
 		var modelY = Math.max(0, Math.round(dragY / cellBoxSize - dropHeight / 2))
-		var globalPoint = popup.mapFromItem(tileGrid, event.x, event.y)
-		// console.log('onDragMove', event.x, event.y, modelX, modelY, globalPoint)
+
 		scrollUpArea.checkContains(event)
 		scrollDownArea.checkContains(event)
 
-		var tileGroup = null
-		if (draggedItem) {
-			if (draggedItem.tileType == "group") {
-				tileGroup = draggedItem
-			}
-		} else if (addedItem) {
-			if (addedItem.tileType == "group") {
-				tileGroup = addedItem
-			}
-		} else if (event && event.hasUrls && event.urls) {
-			if (event.keys && event.keys.indexOf('favoriteId') >= 0) {
-				var url = event.getDataAsString('favoriteId')
-				url = Utils.parseDropUrl(url)
-			} else {
-				var url = event.urls[0].toString()
-				// console.log('new addedItem', event.urls, url)
-				url = Utils.parseDropUrl(url)
-			}
-			// console.log('new addedItem')
-			// console.log('\t', 'urls', event.urls)
-			// console.log('\t', 'url', url)
-			// console.log('\t', 'keys', event.keys)
-			// for (var i = 0; i < event.keys.length; i++) {
-			// 	var key = event.keys[i]
-			// 	var value = event.getDataAsString(key)
-			// 	console.log('\t', 'mimeData', key, value)
-			// }
-
-			addedItem = newTile(url)
-			dropHoverX = modelX
-			dropHoverY = modelY
-
-			// Firefox/Chromium url dropped
-			if (event.keys.indexOf('_NETSCAPE_URL') >= 0) {
-				var netscapeUrl = event.getDataAsString('_NETSCAPE_URL')
-				var tokens = netscapeUrl.split('\n')
-				if (tokens.length >= 2) {
-					var title = tokens[1].trim()
-					if (title) {
-						addedItem.label = title
+		// Handle external drops (URLs, favorites dragged onto the grid)
+		if (!draggedItem && !addedItem) {
+			if (event && event.hasUrls && event.urls) {
+				var url
+				if (event.keys && event.keys.indexOf('favoriteId') >= 0) {
+					url = Utils.parseDropUrl(event.getDataAsString('favoriteId'))
+				} else {
+					url = Utils.parseDropUrl(event.urls[0].toString())
+				}
+				addedItem = newTile(url)
+				if (event.keys.indexOf('_NETSCAPE_URL') >= 0) {
+					var netscapeUrl = event.getDataAsString('_NETSCAPE_URL')
+					var tokens = netscapeUrl.split('\n')
+					if (tokens.length >= 2 && tokens[1].trim()) {
+						addedItem.label = tokens[1].trim()
 						addedItem.icon = 'internet-web-browser'
 					}
 				}
+			} else {
+				return
 			}
-		} else {
-			return
 		}
 
-		// Update hover position first so snapbacks can check against current cursor
+		var tileGroupToIgnore = null
+		if (draggedItem && draggedItem.tileType === 'group') {
+			tileGroupToIgnore = draggedItem
+		} else if (addedItem && addedItem.tileType === 'group') {
+			tileGroupToIgnore = addedItem
+		}
+
 		dropHoverX = Math.max(0, Math.min(modelX, columns - dropWidth))
 		dropHoverY = Math.max(0, modelY)
 
-		// First try to 'snapback' anything that was being pushed
+		// Attempt to return pushed items toward their original positions
 		if (dynamicPusher) {
-			for (var pushedIndex = pushedTiles.length-1; pushedIndex >= 0; --pushedIndex) {
-				var pushedTile = pushedTiles[pushedIndex]
-				if( pushedTile ) {
-					if (snapbackTile(pushedTile)) {
-						pushedTiles.splice(pushedTiles.indexOf(pushedTile), 1)
-					}
-				}
-			}
+			attemptAllSnapbacks()
 		}
 
-		// Check if we can drop item at this location
-		// Use draggedGroupContentHeight (captured at drag start) rather than dynamically
-		// re-computing getGroupAreaRect(draggedItem), which can be corrupted when pushed
-		// groups land in the dragged group's original column range.
-		var dropHeightToCheck = dropHeight
-		if (draggedItem && draggedItem.tileType == "group" && draggedGroupContentHeight > 0) {
-			dropHeightToCheck += draggedGroupContentHeight
+		// Total height to check (groups include their content area)
+		var checkH = dropHeight
+		if (draggedItem && draggedItem.tileType === 'group' && draggedGroupContentHeight > 0) {
+			checkH += draggedGroupContentHeight
 		}
 
-		canDrop = !hits(dropHoverX, dropHoverY, dropWidth, dropHeightToCheck, null, tileGroup, dynamicPusher)
+		canDrop = !checkAndPushCollisions(dropHoverX, dropHoverY, dropWidth, checkH, tileGroupToIgnore)
 
-		// Move group members to follow the dragged group header
+		// Animate group members to visually follow the dragged group header
 		if (isDraggingGroup) {
 			var deltaX = dropHoverX - draggedItem.x
 			var deltaY = dropHoverY - draggedItem.y
@@ -503,72 +762,83 @@ DropArea {
 		}
 	}
 
-	property var hitBox: [] // hitBox[y][x]
-	function updateSize() {
-		var c = 0;
-		var r = 0;
-		var w = 1;
-		var h = 1;
-		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (isNaN(tile.y) || isNaN(tile.h) || isNaN(tile.x) || isNaN(tile.w)) {
-				continue
-			}
-			c = Math.max(c, tile.x + tile.w)
-			r = Math.max(r, tile.y + tile.h)
-			w = Math.max(w, tile.w)
-			h = Math.max(h, tile.h)
-		}
-		// Add extra rows when dragging so we can drop scrolled down
-		var groupItem = null
-		if (draggedItem && draggedItem.tileType == "group")
-		{
-			groupItem = draggedItem
-		}
-		if (draggedItem) {
-			// c += draggedItem.w
-			r += draggedItem.h
+	function cancelDragHover() {
+		dropHoverX = -1
+		dropHoverY = -1
+		scrollUpArea.containsDrag = false
+		scrollDownArea.containsDrag = false
+		addedItem = null
+	}
+
+	function resetDrag() {
+		// If pushed items remain (drag was cancelled, not dropped), snap them back
+		if (pushedItems.length > 0) {
+			snapbackAll()
+			clearAllSnapbacks()
 		}
 
-		// Rebuild hitBox (2D grid of tile locations)
-		var hbColumns = Math.max(minColumns, c)
-		var hbRows = Math.max(minRows, r)
-		var hb = new Array(hbRows)
-		for (var i = 0; i < hbRows; i++) {
-			hb[i] = new Array(hbColumns)
+		// Restore group member coordinate bindings
+		for (var i = 0; i < draggedGroupMembers.length; i++) {
+			var idx = tileModel.indexOf(draggedGroupMembers[i])
+			if (idx >= 0) {
+				var memberItem = tileModelRepeater.itemAt(idx)
+				if (memberItem) memberItem.fixCoordinateBindings()
+			}
 		}
-		for (var i = 0; i < tileModel.length; ++i) {
-			var tile = tileModel[i]
-			if (i == draggedIndex) {
-				continue;	// Don't mark the dragged header's space as in use
-			}
-			if (draggedGroupMembers.length > 0 && draggedGroupMembers.indexOf(tile) >= 0) {
-				continue;	// Don't mark dragged group's members as in use either
-			}
-			for (var j = tile.y; j < tile.y + tile.h; j++) {
-				for (var k = tile.x; k < tile.x + tile.w; k++) {
-					hb[j][k] = true
+		draggedGroupMembers = []
+		cancelDragHover()
+		isDragging = false
+		draggedIndex = -1
+	}
+
+	// ============================================================
+	// Section 10: Grid Operations
+	// ============================================================
+
+	function commitMove(tile, cellX, cellY) {
+		// Permanently place tile at (cellX, cellY) — called on successful drop
+		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) return
+		if (tile.tileType === 'group') {
+			var deltaX = cellX - tile.x
+			var deltaY = cellY - tile.y
+			// Move all group members (use captured draggedGroupMembers for dragged group)
+			var members = (tile === draggedItem && draggedGroupMembers.length > 0)
+				? draggedGroupMembers
+				: null
+			if (!members) {
+				for (var i = 0; i < tileModel.length; i++) {
+					var t = tileModel[i]
+					if (t !== tile && isTileInGroup(tile, t)) {
+						t.x += deltaX
+						t.y += deltaY
+					}
+				}
+			} else {
+				for (var i = 0; i < members.length; i++) {
+					members[i].x += deltaX
+					members[i].y += deltaY
 				}
 			}
 		}
-
-		// Update Properties
-		hitBox = hb
-		maxColumn = c
-		maxRow = r
-		maxWidth = w
-		maxHeight = h
+		tile.x = cellX
+		tile.y = cellY
+		tileGrid.tileModelChanged()
 	}
+
+	// Legacy alias (used from external callers and internally)
+	function moveTile(tile, cellX, cellY) {
+		commitMove(tile, cellX, cellY)
+	}
+
+	function updateSize() { rebuildHitbox() }
+
 	function update() {
 		var urlList = []
 		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (tile.url) {
-				urlList.push(tile.url)
-			}
+			if (tileModel[i].url) urlList.push(tileModel[i].url)
 		}
 		appsModel.tileGridModel.favorites = urlList
-		updateSize()
+		rebuildHitbox()
 		noTiles = (tileModel.length == 0)
 		refreshTileViews()
 	}
@@ -585,6 +855,7 @@ DropArea {
 			}
 		}
 	}
+
 	onDraggedItemChanged: update()
 	onTileModelChanged: update()
 	property var tileModel: []
@@ -594,297 +865,158 @@ DropArea {
 	// every change so the "no tiles" splash state stays correct.
 	property bool noTiles: tileModel.length == 0
 
-	function tryPushGroup(tileXPos, tileYPos, avoidX, avoidY, avoidW, avoidH) {
-		return tryPushTile(tileXPos, tileYPos, avoidX, avoidY, avoidW, avoidH, true)
-	}
-
-	function tryPushTile(tileXPos, tileYPos, avoidX, avoidY, avoidW, avoidH, respectGroups = false) {
-		var smallestDistance = 0
-		var bestXPos = -1
-		var bestYPos = -1
-		var tile = getTileAt( tileXPos, tileYPos )
-		if (!tile) {
-			return false
-		}
-		var tileWidth = tile.w
-		var tileHeight = tile.h
-		if (respectGroups && tile.tileType == 'group') {
-			tileHeight = tile.h + getGroupAreaRect(tile, draggedItem).h
-		}
-
-		var tileGroupHeader = getGroupForTile(tile)
-
-		// Logging info
-		var clearAreaX1, clearAreaX2, clearAreaY1, clearAreaY2
-
-		// There is far too much code duplication when checking the 4 directions, but I don't think lambdas are supported, and functions can't take reference parameters. Could try a function with a complex return object?
-		// Check left
-		var steps = 0
-		for( var xPos = tileXPos-1; xPos >= 0 && (steps < smallestDistance || smallestDistance == 0); --xPos )
-		{
-			++steps
-			if ( isAreaEmpty(xPos, tileYPos, tileWidth, tileHeight, tile) &&
-				!isAreaWithinArea(xPos, tileYPos, xPos+tileWidth-1, tileYPos+tileHeight-1, avoidX, avoidY, avoidX+avoidW-1, avoidY+avoidH-1) &&
-				(!isDraggingGroup || !isAreaInAnyGroup(xPos, tileYPos, tileWidth, tileHeight, tileGroupHeader)) )
-			{
-				smallestDistance = steps
-				bestXPos = xPos
-				bestYPos = tileYPos
-
-				clearAreaX1 = xPos
-				clearAreaY1 = tileYPos
-				clearAreaX2 = xPos+tileWidth-1
-				clearAreaY2 = tileYPos+tileHeight-1
-
-				break
-			}
-		}
-		// Check right
-		steps = 0
-		for( var xPos = tileXPos+1; xPos+tileWidth-1 < columns && (steps < smallestDistance || smallestDistance == 0); ++xPos )
-		{
-			++steps
-			if (smallestDistance !== 0 && steps >= smallestDistance)
-				break
-			if ( isAreaEmpty(xPos, tileYPos, tileWidth, tileHeight, tile) &&
-				!isAreaWithinArea(xPos, tileYPos, xPos+tileWidth-1, tileYPos+tileHeight-1, avoidX, avoidY, avoidX+avoidW-1, avoidY+avoidH-1) &&
-				(!isDraggingGroup || !isAreaInAnyGroup(xPos, tileYPos, tileWidth, tileHeight, tileGroupHeader)) )
-			{
-				smallestDistance = steps
-				bestXPos = xPos
-				bestYPos = tileYPos
-
-				clearAreaX1 = xPos
-				clearAreaY1 = tileYPos
-				clearAreaX2 = xPos+tileWidth-1
-				clearAreaY2 = tileYPos+tileHeight-1
-
-				break
-			}
-		}
-		// Check up
-		steps = 0
-		for( var yPos = tileYPos-1; yPos >= 0 && (steps < smallestDistance || smallestDistance == 0); --yPos )
-		{
-			++steps
-			if (smallestDistance !== 0 && steps >= smallestDistance)
-				break
-			if (tileGroupHeader && isAreaWithinArea(tileXPos, yPos, tileXPos+tileWidth-1, yPos+tileHeight-1, tileGroupHeader.x, tileGroupHeader.y, tileGroupHeader.x+tileGroupHeader.w-1, tileGroupHeader.y+tileGroupHeader.h-1)) {
-				break
-			}
-			if ( isAreaEmpty(tileXPos, yPos, tileWidth, tileHeight, tile) &&
-				!isAreaWithinArea(tileXPos, yPos, tileXPos+tileWidth-1, yPos+tileHeight-1, avoidX, avoidY, avoidX+avoidW-1, avoidY+avoidH-1) &&
-				(!isDraggingGroup || !isAreaInAnyGroup(tileXPos, yPos, tileWidth, tileHeight, tile.tileType == 'group' ? tile : tileGroupHeader)) )
-			{
-				smallestDistance = steps
-				bestXPos = tileXPos
-				bestYPos = yPos
-
-				clearAreaX1 = tileXPos
-				clearAreaY1 = yPos
-				clearAreaX2 = tileXPos+tileWidth-1
-				clearAreaY2 = yPos+tileHeight-1
-
-				break
-			}
-		}
-		// Check down
-		steps = 0
-		var heightToCheck = (tile.tileType === 'group' && !respectGroups) ? (tile.h + getGroupAreaRect(tile).h) : tileHeight
-		for( var yPos = tileYPos+1; yPos+heightToCheck-1 < (rows + heightToCheck) && (steps < smallestDistance || smallestDistance == 0); ++yPos )
-		{
-			++steps
-			if (smallestDistance !== 0 && steps >= smallestDistance)
-				break
-			if ( isAreaEmpty(tileXPos, yPos, tileWidth, heightToCheck, tile) &&
-				!isAreaWithinArea(tileXPos, yPos, tileXPos+tileWidth-1, yPos+heightToCheck-1, avoidX, avoidY, avoidX+avoidW-1, avoidY+avoidH-1) &&
-				(!isDraggingGroup || !isAreaInAnyGroup(tileXPos, yPos, tileWidth, heightToCheck, tile.tileType == 'group' ? tile : tileGroupHeader)) )
-			{
-				smallestDistance = steps
-				bestXPos = tileXPos
-				bestYPos = yPos
-
-				clearAreaX1 = tileXPos
-				clearAreaY1 = yPos
-				clearAreaX2 = tileXPos+tileWidth-1
-				clearAreaY2 = yPos+heightToCheck-1
-
-				break
-			}
-		}
-
-		if(smallestDistance > 0) {
-			pushTile(tile, bestXPos, bestYPos)
-			return true
-		}
-		return false
-	}
-
-	function isAreaInAnyGroup(x, y, w, h, excludeGroup) {
-		for (var i = 0; i < tileModel.length; i++) {
-			var t = tileModel[i]
-			if (t.tileType !== 'group') continue
-			if (t === excludeGroup || t === draggedItem) continue
-			var area = getGroupAreaRect(t)
-			if (area.h > 0 && isAreaWithinArea(x, y, x+w-1, y+h-1, area.x1, area.y1, area.x2, area.y2)) {
-				return true
-			}
-		}
-		return false
-	}
-
-	function isAreaEmpty( x, y, w, h, tileToIgnore ) {
-		for (var localX = x; localX < x+w; ++localX) {
-			for (var localY = y; localY < y+h; ++localY) {
-				if (localY < 0 || localX < 0 || localX >= hitBox[0].length) {
-					return false  // Above or outside column bounds — invalid
-				}
-				if (localY >= hitBox.length) {
-					continue  // Below current tile extent — genuinely empty
-				}
-				if (hitBox[localY][localX]) {
-					if (tileToIgnore == null) {
-						return false
-					} else if (getTileAt(localX, localY) !== tileToIgnore) {
-						if (tileToIgnore.tileType !== 'group' || !isTileInGroup(tileToIgnore, getTileAt(localX, localY))) {
-							return false
-						}
-					}
-				}
-			}
-		}
-		return true
-	}
-
-	function getTileItem(tileData) {
-		for (var i = 0; i < tileModel.length; i++) {
-			if (tileModel[i] === tileData) {
-				return tileModelRepeater.itemAt(i)
-			}
-		}
-		return null
-	}
-
-	function hits(x, y, w, h, tileToIgnore, tileGroupToIgnore, allowPushing) {
-		// console.log('hits', [columns,rows], [x,y,w,h], hitBox)
-		for (var j = y; j < y + h; j++) {
-			if (j < 0 || j >= hitBox.length) {
-				continue; // Should we return true when out of bounds?
-			}
-			for (var k = x; k < x + w; k++) {
-				if (k < 0 || k >= hitBox[j].length) {
-					continue; // Should we return true when out of bounds?
-				}
-				if (hitBox[j][k]) {
-					var hitTile = getTileAt(k,j)	// We will always want to look at the tiles top-left position
-					
-					// Ignore any tiles/groups specified
-					if(hitTile == tileToIgnore) {
-						continue;
-					}
-					if(tileGroupToIgnore && (hitTile == tileGroupToIgnore || draggedGroupMembers.indexOf(hitTile) >= 0 || isTileInGroup(tileGroupToIgnore, hitTile))) {
-						continue;
-					}
-
-					// Handle pushing if necessary
-					if( !allowPushing ) {
-						return true
-					} else {
-						var hitTileGroupHeader = getGroupForTile(hitTile)
-						// When dragging a group, push other groups as whole units (header + members together)
-						if ((draggedItem && draggedItem.tileType == 'group') && (hitTile.tileType === 'group' || hitTileGroupHeader)) {
-							var groupToPush = (hitTile.tileType === 'group') ? hitTile : hitTileGroupHeader
-							if( !tryPushGroup(groupToPush.x, groupToPush.y, x, y, w, h) ) {
-								return true
-							} else {
-								if (pushedTiles.indexOf(groupToPush) == -1) {
-									pushedTiles.push( groupToPush )
-								}
-							}
-						} else {
-							if( !tryPushTile(hitTile.x, hitTile.y, x, y, w, h) ) {
-								return true
-							} else {
-								if (pushedTiles.indexOf(hitTile) == -1) {
-									pushedTiles.push( hitTile )
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		return false
-	}
-
-	function getTileAt(cellX, cellY) {
-		for (var i = 0; i < tileModel.length; i++) {
-			if (i === draggedIndex) continue
-			if (draggedGroupMembers.length > 0 && draggedGroupMembers.indexOf(tileModel[i]) >= 0) continue
-			var tile = tileModel[i]
-			if (tileWithin(tile, cellX, cellY, cellX, cellY)) {
-				return tile
-			}
-		}
-		return null
-	}
-
 	function getTilesInArea(area) {
-		var tileList = []
-
-		// Move tiles below group label
+		var result = []
 		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			if (tileWithin(tile, area.x1, area.y1, area.x2, area.y2)) {
-				tileList.push(tile)
+			if (tileWithin(tileModel[i], area.x1, area.y1, area.x2, area.y2)) {
+				result.push(tileModel[i])
 			}
 		}
-
-		return tileList
+		return result
 	}
 
 	function getTileLabel(tile) {
 		if (tile.url) {
 			var app = appsModel.tileGridModel.getApp(tile.url)
-			var labelText = tile.label || app.display || app.url || ""
-			return labelText
-		} else {
-			return ""
+			return tile.label || app.display || app.url || ""
 		}
+		return ""
 	}
+
 	function sortGroupTiles(groupTile) {
-		var area = getGroupAreaRect(groupTile)
+		var area = getGroupContentRect(groupTile)
 		var tileList = getTilesInArea(area)
+
+		tileList.sort(function(a, b) {
+			return getTileLabel(a).localeCompare(getTileLabel(b))
+		})
 
 		var cursorX = groupTile.x
 		var cursorY = groupTile.y + groupTile.h
 		var rowH = 0
-		tileList.sort(function(a, b) {
-			var aLabel = getTileLabel(a)
-			var bLabel = getTileLabel(b)
-			return aLabel.localeCompare(bLabel)
-		})
-
 		for (var i = 0; i < tileList.length; i++) {
 			var tile = tileList[i]
-			var tileX2 = cursorX + tile.w - 1
-
-			// If there's not enough room on this row
-			if (tileX2 > area.x2) {
-				// Move to the next row
+			if (cursorX + tile.w - 1 > area.x2) {
 				cursorX = groupTile.x
 				cursorY += rowH
+				rowH = 0
 			}
-
 			tile.x = cursorX
 			tile.y = cursorY
 			rowH = Math.max(rowH, tile.h)
 			cursorX += tile.w
 		}
-
-		// We call this in moveTile so no need to duplicate work.
 		tileGrid.tileModelChanged()
 	}
+
+	function newTile(url) {
+		return { x: 0, y: 0, w: 2, h: 2, url: url }
+	}
+
+	function removeIndex(i) {
+		tileModel.splice(i, 1)
+		tileModelChanged()
+	}
+
+	function removeApp(url) {
+		var changed = false
+		for (var i = tileModel.length - 1; i >= 0; i--) {
+			// Plasma 6.8 Kicker favorite ids carry an "applications:" prefix; normalize both sides.
+			if (Utils.normAppId(tileModel[i].url) === Utils.normAppId(url)) {
+				tileModel.splice(i, 1)
+				changed = true
+			}
+		}
+		if (changed) tileModelChanged()
+	}
+
+	function findOpenPos(w, h) {
+		for (var y = 0; y < rows; y++) {
+			for (var x = 0; x <= columns - w; x++) {
+				if (isRectFree(x, y, w, h, null)) {
+					return { x: x, y: y, scrollToBottom: false }
+				}
+			}
+		}
+		// No space found — add a new row at the bottom
+		return { x: 0, y: rows, scrollToBottom: true }
+	}
+
+	function parseTileXY(tile, x, y) {
+		if (typeof x !== "undefined" && typeof y !== "undefined") {
+			tile.x = x
+			tile.y = y
+		} else {
+			var openPos = findOpenPos(tile.w, tile.h)
+			tile.x = openPos.x
+			tile.y = openPos.y
+			if (openPos.scrollToBottom) {
+				Qt.callLater(function() {
+					scrollFlickable.contentY = Math.max(0, scrollView.scrollHeight - scrollFlickable.height)
+				})
+			}
+		}
+	}
+
+	function addApp(url, x, y) {
+		url = Utils.parseDropUrl(url)
+		var tile = newTile(url)
+		parseTileXY(tile, x, y)
+		tileModel.push(tile)
+		tileModelChanged()
+		return tile
+	}
+
+	function hasAppTile(url) {
+		for (var i = 0; i < tileModel.length; i++) {
+			// Plasma 6.8 Kicker favorite ids carry an "applications:" prefix; normalize both sides.
+			if (Utils.normAppId(tileModel[i].url) === Utils.normAppId(url)) return true
+		}
+		return false
+	}
+
+	function limit(minValue, value, maxValue) {
+		return Math.max(minValue, Math.min(value, maxValue))
+	}
+
+	function addTile(x, y, props) {
+		var tile = newTile("")
+		parseTileXY(tile, x, y)
+		if (props) {
+			var keys = Object.keys(props)
+			for (var i = 0; i < keys.length; i++) tile[keys[i]] = props[keys[i]]
+		}
+		tileModel.push(tile)
+		tileModelChanged()
+		return tile
+	}
+
+	function addGroup(x, y, props) {
+		var groupProps = {
+			tileType: "group",
+			label: i18nc("default group label", "Group"),
+			w: limit(2, columns - x, 6),
+			h: 1,
+		}
+		if (props) {
+			var keys = Object.keys(props)
+			for (var i = 0; i < keys.length; i++) groupProps[keys[i]] = props[keys[i]]
+		}
+		return addTile(x, y, groupProps)
+	}
+
+	function addDefaultTiles() {
+		tileGridPresets.addDefault()
+	}
+
+	// Qt >= 6.10 (Plasma 6.8) deep-copies object-typed signal arguments through
+	// QVariant, so this carries the tile's *index* (a value type) instead of the
+	// tile object. The editor resolves the real `tileModel[index]` element itself.
+	signal editTile(int tileIndex)
+
+	// ============================================================
+	// UI: ScrollView + Grid
+	// ============================================================
 
 	QQC2.ScrollView {
 		id: scrollView
@@ -920,11 +1052,6 @@ DropArea {
 
 				width: columns * cellBoxSize
 				height: rows * cellBoxSize
-
-				// Rectangle {
-				// 	anchors.fill: parent
-				// 	color: "#88336699"
-				// }
 
 				Repeater {
 					id: cellRepeater
@@ -989,7 +1116,7 @@ DropArea {
 								if (mouse.button == Qt.RightButton) {
 									cellContextMenu.cellX = cellItem.modelX
 									cellContextMenu.cellY = cellItem.modelY
-									var pos = mapToItem(scrollItem, mouse.x, mouse.y) // cellContextMenu is a child of scrollItem
+									var pos = mapToItem(scrollItem, mouse.x, mouse.y)
 									cellContextMenu.open(pos.x, pos.y)
 								}
 							}
@@ -1032,10 +1159,10 @@ DropArea {
 					id: tileModelRepeater
 					model: tileModel
 					// onCountChanged: console.log('onCountChanged', count)
-					
+
 					TileItem {
 						id: tileItem
-					}	
+					}
 				}
 			}
 		} // Flickable
@@ -1124,134 +1251,4 @@ DropArea {
 			}
 		}
 	}
-
-	function newTile(url) {
-		return {
-			"x": 0,
-			"y": 0,
-			"w": 2,
-			"h": 2,
-			"url": url,
-		}
-	}
-
-	function removeIndex(i) {
-		tileModel.splice(i, 1) // remove 1 item at index
-		tileModelChanged()
-	}
-
-	function removeApp(url) {
-		var removedCount = 0
-		for (var i = tileModel.length - 1; i >= 0; i--) {
-			var tile = tileModel[i]
-			// Plasma 6.8 Kicker favorite ids carry an "applications:" prefix; normalize both sides.
-			if (Utils.normAppId(tile.url) === Utils.normAppId(url)) {
-				removedCount += 1
-				tileModel.splice(i, 1) // remove 1 item at index
-			}
-		}
-		if (removedCount > 0) {
-			tileModelChanged()
-		}
-	}
-
-	function findOpenPos(w, h) {
-		for (var y = 0; y < rows; y++) {
-			for (var x = 0; x < columns - (w-1); x++) {
-				if (hits(x, y, w, h))
-					continue
-
-				// Room open for
-				return {
-					x: x,
-					y: y,
-				}
-			}
-		}
-
-		// Current grid has no room.
-		// Add to new row.
-		return {
-			x: 0,
-			y: rows
-		}
-	}
-
-	function parseTileXY(tile, x, y) {
-		if (typeof x !== "undefined" && typeof y !== "undefined") {
-			tile.x = x
-			tile.y = y
-		} else {
-			var openPos = findOpenPos(tile.w, tile.h)
-			tile.x = openPos.x
-			tile.y = openPos.y
-		}
-	}
-	function addApp(url, x, y) {
-		url = Utils.parseDropUrl(url)
-		var tile = newTile(url)
-		parseTileXY(tile, x, y)
-		tileModel.push(tile)
-		tileModelChanged()
-		return tile
-	}
-
-	function hasAppTile(url) {
-		for (var i = 0; i < tileModel.length; i++) {
-			var tile = tileModel[i]
-			// Plasma 6.8 Kicker favorite ids carry an "applications:" prefix; normalize both sides.
-			if (Utils.normAppId(tile.url) === Utils.normAppId(url)) {
-				return true
-			}
-		}
-		return false
-	}
-
-	function limit(minValue, value, maxValue) {
-		return Math.max(minValue, Math.min(value, maxValue))
-	}
-
-	function addTile(x, y, props) {
-		var tile = newTile("")
-		parseTileXY(tile, x, y)
-		if (typeof props !== "undefined") {
-			var keys = Object.keys(props)
-			for (var i = 0; i < keys.length; i++) {
-				var key = keys[i]
-				var value = props[key]
-				tile[key] = value
-			}
-		}
-		tileModel.push(tile)
-		tileModelChanged()
-		return tile
-	}
-
-	function addGroup(x, y, props) {
-		var groupProps = {
-			tileType: "group",
-			label: i18nc("default group label", "Group"),
-			w: limit(2, columns-x, 6), // 6 unless we have less columns.
-			h: 1,
-		}
-		if (typeof props !== "undefined") {
-			var keys = Object.keys(props)
-			for (var i = 0; i < keys.length; i++) {
-				var key = keys[i]
-				var value = props[key]
-				groupProps[key] = value
-			}
-		}
-		return addTile(x, y, groupProps)
-	}
-
-	// Use for quickly testing on widget load
-	function addDefaultTiles() {
-		tileGridPresets.addDefault()
-	}
-
-	// Qt >= 6.10 (Plasma 6.8) deep-copies object-typed signal arguments through
-	// QVariant, so this carries the tile's *index* (a value type) instead of the
-	// tile object. The editor resolves the real `tileModel[index]` element itself.
-	signal editTile(int tileIndex)
 }
