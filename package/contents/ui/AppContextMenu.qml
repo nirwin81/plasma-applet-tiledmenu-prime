@@ -7,7 +7,7 @@ Item {
 
 	property QtObject menu
 	property Item visualParent
-	property bool opened: menu ? (menu.status != PlasmaExtras.Menu.Closed) : false
+	property bool opened: false
 	property int tileIndex: -1
 
 	signal closed
@@ -23,15 +23,15 @@ Item {
 
 	function open(x, y) {
 		refreshMenu()
-		if (!menu) { 
+		if (!menu) {
 			console.log('AppContextMenu.open: menu is null, returning')
-			return 
+			return
 		}
 		if (menu.content.length === 0) {
 			console.log('AppContextMenu.open: content empty, returning')
 			return
 		}
-		
+		opened = true
 		if (x && y) {
 			menu.open(x, y)
 		} else {
@@ -44,13 +44,17 @@ Item {
 			menu.destroy()
 			menu = null
 		}
+		if (opened) {
+			opened = false
+		}
 	}
 
 	function refreshMenu() {
 		destroyMenu()
 		menu = contextMenuComponent.createObject(root)
-		if (!menu) { 
-			console.log('AppContextMenu.refreshMenu: createObject returned null'); return 
+		if (!menu) {
+			console.log('AppContextMenu.refreshMenu: createObject returned null')
+			return
 		}
 		populateMenu(menu)
 	}
@@ -75,14 +79,16 @@ Item {
 			function newSeperator() {
 				return menuSeparatorComponent.createObject(contextMenu)
 			}
+
 			function newMenuItem() {
 				return menuItemComponent.createObject(contextMenu)
 			}
 
 			function addPinToMenuAction(favoriteId) {
 				var menuItem = menu.newMenuItem()
-				if (!menuItem) { 
-					console.log('addPinToMenuAction: menuItem null, returning'); return 
+				if (!menuItem) {
+					console.log('addPinToMenuAction: menuItem null, returning')
+					return
 				}
 				if (tileGrid.hasAppTile(favoriteId)) {
 					menuItem.text = i18n("Unpin from Menu")
@@ -104,26 +110,13 @@ Item {
 				menu.addMenuItem(menuItem)
 			}
 
-			// https://invent.kde.org/plasma/plasma-desktop/-/blob/Plasma/5.8/applets/taskmanager/package/contents/ui/ContextMenu.qml#L75
-			// https://invent.kde.org/plasma/plasma-desktop/-/blob/Plasma/5.27/applets/taskmanager/package/contents/ui/ContextMenu.qml#L75
-			// https://invent.kde.org/plasma/plasma-desktop/-/blob/master/applets/taskmanager/package/contents/ui/ContextMenu.qml
 			function addActionList(actionList, listModel, index) {
 				if (!actionList || !actionList.forEach) {
 					return
 				}
-				// .desktop file Exec actions
-				// ------
-				// Pin to Taskbar / Desktop / Panel
-				// ------
-				// Recent Documents
-				// ------
-				// ...
-				// ------
-				// Edit Application
 				actionList.forEach(function(actionItem) {
-					// console.log(index, actionItem.actionId, actionItem.actionArgument, actionItem.text)
 					var menuItem = menu.newMenuItem()
-					if (!menuItem) 
+					if (!menuItem)
 						return
 					menuItem.text = actionItem.text ? actionItem.text : ""
 					menuItem.enabled = actionItem.type != "title" && ("enabled" in actionItem ? actionItem.enabled : true)
@@ -134,21 +127,14 @@ Item {
 						listModel.triggerIndexAction(index, actionItem.actionId, actionItem.actionArgument)
 					})
 
-					//--- Overrides
 					if (actionItem.actionId == 'addToDesktop') {
-						// Remove (user should just drag it)
 						menu.removeMenuItem(menuItem)
 					} else if (actionItem.actionId == 'addToPanel') {
-						// Remove (user should just drag it)
-						// User usually means to add it to taskmanager anyways.
 						menu.removeMenuItem(menuItem)
 					} else if (actionItem.actionId == 'addToTaskManager') {
 						menuItem.text = i18n("Pin to Taskbar")
 						menuItem.icon = "bookmark-new"
-					} else if (actionItem.actionId == 'editApplication') {
-						// menuItem.text = i18n("Properties")
 					}
-
 				})
 			}
 		}
