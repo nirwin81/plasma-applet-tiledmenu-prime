@@ -6,14 +6,9 @@ Item {
 	id: tileItem
 	property int pushedFromX: -1
 	property int pushedFromY: -1
-	// Width/height/position are read through appObj (QML properties) rather than
-	// a plain JS object, because Qt >= 6.10 (Plasma 6.8) no longer tracks
-	// JS-object property changes in bindings. appObj re-emits its `tile`
-	// changed signal (AppObject.updateFromTile) when a tile is edited.
 	width: appObj.tileW * cellBoxSize
 	height: appObj.tileH * cellBoxSize
 
-	//For push/snapback animations
 	property real targetX: appObj.tileX * cellBoxSize
 	property real targetY: appObj.tileY * cellBoxSize
 	x: targetX
@@ -29,11 +24,6 @@ Item {
 		z = 0
 	}
 
-	// IMPORTANT (Qt >= 6.10 / Plasma 6.8): the Repeater's `modelData` is a
-	// C++-side copy of the tile object (different reference, reconstructed via
-	// QVariant), NOT the element in the `tileModel` JS array. Mutating or
-	// comparing it never touches the array that gets saved. Always use the
-	// real element: `tileModel[index]`.
 	AppObject {
 		id: appObj
 		tile: tileModel[index]
@@ -47,7 +37,6 @@ Item {
 	Behavior on opacity { NumberAnimation { duration: 200 } }
 	Behavior on scale { NumberAnimation { duration: 200 } }
 
-	//--- View Start
 	TileItemView {
 		id: tileItemView
 		anchors.fill: parent
@@ -73,7 +62,6 @@ Item {
 		hoverOutlineSize: tileGrid.hoverOutlineSize
 		mouseArea: tileMouseArea
 	}
-	//--- View End
 
 	MouseArea {
 		id: tileMouseArea
@@ -91,10 +79,7 @@ Item {
 		}
 
 		drag.target: plasmoid.configuration.tilesLocked ? undefined : tileItem
-		// drag.onActiveChanged: console.log('drag.active', drag.active)
 
-		// This MouseArea will spam "QQuickItem::ungrabMouse(): Item is not the mouse grabber."
-		// but there's no other way of having a clickable drag area.
 		onClicked: function(mouse) {
 			mouse.accepted = true
 			tileGrid.resetDrag()
@@ -105,7 +90,7 @@ Item {
 					appsModel.tileGridModel.runApp(appObj.tile.url)
 				}
 			} else if (mouse.button == Qt.RightButton) {
-				contextMenu.open(mouse.x, mouse.y)
+				appContextMenu.open(mouse.x, mouse.y)
 			}
 		}
 	}
@@ -115,16 +100,11 @@ Item {
 	Drag.hotSpot.x: width / 2
 	Drag.hotSpot.y: height / 2
 
-	// We use this drag pattern to use the internal drag with events.
-	// https://stackoverflow.com/a/24729837/947742
 	property bool dragActive: tileMouseArea.drag.active
 	onDragActiveChanged: {
 		if (dragActive) {
-			// console.log("drag started")
-			// console.log('onDragStarted', JSON.stringify(modelData), index, tileModel.length)
 			tileGrid.startDrag(index)
 			tileGrid.dropOffsetX = 0
-			// tileGrid.dropOffsetY = 0
 			tileItem.z = 1
 			Drag.start()
 		} else {
@@ -132,14 +112,13 @@ Item {
 			console.log('DragArea.onDrop', draggedItem)
 			Qt.callLater(tileGrid.resetDrag)
 			Qt.callLater(tileItem.fixCoordinateBindings)
-			Drag.drop() // Breaks QML context.
-			// We need to use callLater to call functions after Drag.drop().
+			Drag.drop()
 		}
 	}
 
 	QQC2.ToolTip {
 		id: control
-		visible: tileItemView.hovered && !(dragActive || contextMenu.opened) && appObj.tile.w == 1 && appObj.tile.h == 1
+		visible: tileItemView.hovered && !(dragActive || appContextMenu.opened) && appObj.tile.w == 1 && appObj.tile.h == 1
 		text: appObj.labelText
 		delay: 0
 		x: parent.width + rightPadding
@@ -163,16 +142,15 @@ Item {
 	}
 
 	AppContextMenu {
-		id: contextMenu
+		id: appContextMenu
+		visualParent: tileItem
 		tileIndex: index
-		onPopulateMenu: function(menu) {
-			if (!plasmoid.configuration.tilesLocked) {
-				menu.addPinToMenuAction(appObj.tile ? appObj.tile.url : '')
-			}
-
+		onPopulateMenu: {
 			appObj.addActionList(menu)
 
 			if (!plasmoid.configuration.tilesLocked) {
+				menu.addPinToMenuAction(appObj.tile ? appObj.tile.url : '')
+
 				if (appObj.isGroup) {
 					var menuItem = menu.newMenuItem()
 					menuItem.text = i18n("Sort Tiles")
@@ -192,13 +170,8 @@ Item {
 	}
 
 	function openTileEditor() {
-		// Pass the index (a value type) across the signal boundary. In Qt >= 6.10
-		// (Plasma 6.8) object-typed signal arguments are deep-copied through
-		// QVariant, so passing the tile object itself hands the editor a clone
-		// whose edits can never reach the `tileModel` array that gets saved.
 		tileGrid.editTile(index)
 	}
 	function closeTileEditor() {
-
 	}
 }
