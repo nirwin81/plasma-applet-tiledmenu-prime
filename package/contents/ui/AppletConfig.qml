@@ -103,7 +103,7 @@ Item {
 			return Kirigami.Theme.backgroundColor
 		}
 	}
-	readonly property color defaultTileColor: plasmoid.configuration.defaultTileColor || themeButtonBgColor
+	readonly property color defaultTileColor: plasmoid.configuration.defaultTileTransparent ? "transparent" : (plasmoid.configuration.defaultTileColor || themeButtonBgColor)
 	readonly property bool defaultTileGradient: plasmoid.configuration.defaultTileGradient
 	readonly property color sidebarBackgroundColor: plasmoid.configuration.sidebarBackgroundColor || Kirigami.Theme.backgroundColor
 	readonly property color menuItemTextColor2: setAlpha(Kirigami.Theme.textColor, 0.6)

@@ -43,7 +43,7 @@
 			<default>xdg:DOCUMENTS,xdg:PICTURES,org.kde.dolphin.desktop,systemsettings.desktop</default>
 		</entry>
 		<entry name="defaultAppListView" type="string">
-			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory, TilesOnly -->
+			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory. Tiles Only is remembered by rememberLastAppListView, not stored here. -->
 			<default>Alphabetical</default>
 		</entry>
 		<entry name="rememberLastAppListView" type="bool">
@@ -98,6 +98,10 @@
 		<!-- Use empty string instead of color type so that we can use default colors from the color scheme. -->
 		<entry name="defaultTileColor" type="string">
 			<default></default>
+		</entry>
+		<entry name="defaultTileTransparent" type="bool">
+			<label>Use a transparent background for tiles that have no color of their own. Does not change the custom color.</label>
+			<default>false</default>
 		</entry>
 		<entry name="defaultTileGradient" type="bool">
 			<default>false</default>
