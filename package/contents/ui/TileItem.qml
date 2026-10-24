@@ -18,10 +18,11 @@ Item {
 	property real targetY: appObj.tileY * cellBoxSize
 	x: targetX
 	y: targetY
-	// Group backgrounds extend below the title. Keep the whole group behind
-	// its tiles so that color shows in the gaps instead of covering the tiles.
-	// Cell hit targets sit at z -2, so a group title at z -1 still receives clicks.
-	z: dragActive ? 1 : (appObj.isGroup ? -1 : 0)
+	// Extended group backgrounds sit behind their tiles. Cell hit targets
+	// drop to z -2 in that mode, so the group title stays at z -1 and still
+	// receives clicks. Otherwise every tile stays at z 0.
+	readonly property bool extendGroup: appObj.isGroup && config.extendGroupBackground
+	z: dragActive ? 1 : (extendGroup ? -1 : 0)
 	Behavior on targetX { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 	Behavior on targetY { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
@@ -30,7 +31,7 @@ Item {
 		targetY = Qt.binding(function(){ return appObj.tileY * cellBoxSize })
 		x = Qt.binding(function(){ return targetX })
 		y = Qt.binding(function(){ return targetY })
-		z = Qt.binding(function(){ return tileItem.dragActive ? 1 : (appObj.isGroup ? -1 : 0) })
+		z = Qt.binding(function(){ return tileItem.dragActive ? 1 : (tileItem.extendGroup ? -1 : 0) })
 	}
 
 	// IMPORTANT (Qt >= 6.10 / Plasma 6.8): the Repeater's `modelData` is a
@@ -48,7 +49,7 @@ Item {
 	readonly property int fadedWidth: width - cellPushedMargin
 	opacity: faded ? 0.75 : 1
 	scale: faded ? fadedWidth / width : 1
-	transformOrigin: appObj.isGroup ? Item.Top : Item.Center
+	transformOrigin: extendGroup ? Item.Top : Item.Center
 	Behavior on opacity { NumberAnimation { duration: 200 } }
 	Behavior on scale { NumberAnimation { duration: 200 } }
 
@@ -59,11 +60,11 @@ Item {
 		anchors.right: parent.right
 		anchors.top: parent.top
 		anchors.margins: cellMargin
-		// Groups keep a one-row title. The background continues through every
-		// row that belongs to the group.
+		// Groups keep a one-row title. When extended, the background continues
+		// through every row that belongs to the group.
 		height: {
 			var rows = appObj.tileH
-			if (appObj.isGroup && appObj.groupRect) {
+			if (tileItem.extendGroup && appObj.groupRect) {
 				rows += Math.max(0, appObj.groupRect.h)
 			}
 			return rows * cellBoxSize - 2 * cellMargin
@@ -78,9 +79,12 @@ Item {
 		anchors.fill: parent
 		anchors.margins: cellMargin
 		hoverRadius: {
-			// Use the title size. The view is taller than the title for groups.
-			if (appObj.isGroup) {
+			// An extended group view is taller than its title. The outline
+			// follows the title, which is the tile item itself.
+			if (extendGroup) {
 				return Math.max(tileItem.width, tileItem.height) - 2 * cellMargin
+			} else if (appObj.isGroup) {
+				return tileItemView.maxSize
 			} else {
 				return tileItemView.minSize
 			}

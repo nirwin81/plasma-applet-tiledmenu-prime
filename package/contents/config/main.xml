@@ -46,6 +46,15 @@
 			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory, TilesOnly -->
 			<default>Alphabetical</default>
 		</entry>
+		<entry name="rememberLastAppListView" type="bool">
+			<label>Remember Alphabetical, Categories, or Tiles Only from the sidebar. Does not change Default View.</label>
+			<default>false</default>
+		</entry>
+		<entry name="lastAppListView" type="string">
+			<!-- Alphabetical, Categories, or TilesOnly. Used only when rememberLastAppListView is true. -->
+			<label>Last sidebar view.</label>
+			<default></default>
+		</entry>
 		<entry name="hideUserControl" type="bool">
 			<label>Whether to hide the "User" control on the Sidebar.</label>
 			<default>false</default>
@@ -117,6 +126,10 @@
 		</entry>
 		<entry name="dynamicTilePusher" type="bool">
 			<default>true</default>
+		</entry>
+		<entry name="extendGroupBackground" type="bool">
+			<label>Paint each group background behind its tiles, and leave tiles inside a group transparent until they have their own color.</label>
+			<default>false</default>
 		</entry>
 		<entry name="appDescription" type="string">
 			<!-- enum: hidden, after, below -->

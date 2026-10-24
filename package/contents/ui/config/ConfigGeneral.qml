@@ -219,6 +219,10 @@ LibConfig.FormKCM {
 		text: i18n("Use dynamic pusher")
 		configKey: 'dynamicTilePusher'
 	}
+	LibConfig.CheckBox {
+		text: i18n("Extend group background behind its tiles")
+		configKey: 'extendGroupBackground'
+	}
 
 
 
@@ -451,6 +455,10 @@ LibConfig.FormKCM {
 			{ value: "JumpToCategory", text: i18n("Jump To Category") },
 			{ value: "TilesOnly", text: i18n("Tiles Only") },
 		]
+	}
+	LibConfig.CheckBox {
+		text: i18n("Remember the last sidebar view")
+		configKey: "rememberLastAppListView"
 	}
 
 	LibConfig.ComboBox {

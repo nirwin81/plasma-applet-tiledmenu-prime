@@ -38,14 +38,22 @@ Item {
 
 	property bool searchOnTop: false
 
+	// Sidebar clicks store a separate key. defaultAppListView stays the
+	// settings "Default View" and is only used when remembering is off.
 	function rememberAppListView(viewName) {
-		if (plasmoid.configuration.defaultAppListView !== viewName) {
-			plasmoid.configuration.defaultAppListView = viewName
+		if (!plasmoid.configuration.rememberLastAppListView) {
+			return
+		}
+		if (plasmoid.configuration.lastAppListView !== viewName) {
+			plasmoid.configuration.lastAppListView = viewName
 		}
 	}
 
 	function showDefaultView() {
 		var defView = plasmoid.configuration.defaultAppListView
+		if (plasmoid.configuration.rememberLastAppListView && plasmoid.configuration.lastAppListView) {
+			defView = plasmoid.configuration.lastAppListView
+		}
 		if (defView == 'Alphabetical') {
 			appsView.showAppsAlphabetically(false)
 			config.showSearch = true

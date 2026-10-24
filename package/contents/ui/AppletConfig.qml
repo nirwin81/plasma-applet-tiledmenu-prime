@@ -138,6 +138,7 @@ Item {
 	readonly property bool dynamicTilePusher: {
 		return plasmoid.configuration.dynamicTilePusher
 	}
+	readonly property bool extendGroupBackground: plasmoid.configuration.extendGroupBackground
 	
 	// App Description Enum (hidden, after, below)
 	readonly property bool appDescriptionVisible: plasmoid.configuration.appDescription !== 'hidden'

@@ -8,8 +8,8 @@ QtObject {
 	readonly property bool isGroup: tile && tile.tileType == "group"
 	readonly property bool isLauncher: !isGroup
 
-	// Tiles inside a group have no color of their own until one is chosen,
-	// so the group background shows through instead of the launcher color.
+	// When "Extend group background" is on, tiles inside a group have no
+	// color of their own until one is chosen, so the group shows through.
 	property bool inGroup: false
 	function refreshInGroup() {
 		var inside = false
@@ -23,7 +23,7 @@ QtObject {
 	onTileChanged: refreshInGroup()
 	Component.onCompleted: refreshInGroup()
 
-	readonly property color defaultBackgroundColor: (isGroup || inGroup) ? "transparent" : config.defaultTileColor
+	readonly property color defaultBackgroundColor: (isGroup || (inGroup && config.extendGroupBackground)) ? "transparent" : config.defaultTileColor
 	readonly property bool defaultShowIcon: isGroup ? false : true
 	readonly property int defaultTileW: isGroup ? 6 : 2
 	readonly property int defaultTileH: isGroup ? 1 : 2
@@ -46,7 +46,7 @@ QtObject {
 			return tile.gradient
 		}
 		// A default gradient on a clear tile would paint over the group.
-		if ((isGroup || inGroup) && !hasOwnBackgroundColor) {
+		if (config.extendGroupBackground && (isGroup || inGroup) && !hasOwnBackgroundColor) {
 			return false
 		}
 		return config.defaultTileGradient
