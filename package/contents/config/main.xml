@@ -43,8 +43,17 @@
 			<default>xdg:DOCUMENTS,xdg:PICTURES,org.kde.dolphin.desktop,systemsettings.desktop</default>
 		</entry>
 		<entry name="defaultAppListView" type="string">
-			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory, TilesOnly -->
+			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory. Tiles Only is remembered by rememberLastAppListView, not stored here. -->
 			<default>Alphabetical</default>
+		</entry>
+		<entry name="rememberLastAppListView" type="bool">
+			<label>Remember Alphabetical, Categories, or Tiles Only from the sidebar. Does not change Default View.</label>
+			<default>false</default>
+		</entry>
+		<entry name="lastAppListView" type="string">
+			<!-- Alphabetical, Categories, or TilesOnly. Used only when rememberLastAppListView is true. -->
+			<label>Last sidebar view.</label>
+			<default></default>
 		</entry>
 		<entry name="hideUserControl" type="bool">
 			<label>Whether to hide the "User" control on the Sidebar.</label>
@@ -90,6 +99,10 @@
 		<entry name="defaultTileColor" type="string">
 			<default></default>
 		</entry>
+		<entry name="defaultTileTransparent" type="bool">
+			<label>Use a transparent background for tiles that have no color of their own. Does not change the custom color.</label>
+			<default>false</default>
+		</entry>
 		<entry name="defaultTileGradient" type="bool">
 			<default>false</default>
 		</entry>
@@ -117,6 +130,10 @@
 		</entry>
 		<entry name="dynamicTilePusher" type="bool">
 			<default>true</default>
+		</entry>
+		<entry name="extendGroupBackground" type="bool">
+			<label>Paint each group background behind its tiles, and leave tiles inside a group transparent until they have their own color.</label>
+			<default>false</default>
 		</entry>
 		<entry name="appDescription" type="string">
 			<!-- enum: hidden, after, below -->

@@ -8,7 +8,22 @@ QtObject {
 	readonly property bool isGroup: tile && tile.tileType == "group"
 	readonly property bool isLauncher: !isGroup
 
-	readonly property color defaultBackgroundColor: isGroup ? "transparent" : config.defaultTileColor
+	// When "Extend group background" is on, tiles inside a group have no
+	// color of their own until one is chosen, so the group shows through.
+	property bool inGroup: false
+	function refreshInGroup() {
+		var inside = false
+		if (tile && !isGroup && tileGrid) {
+			inside = !!tileGrid.getGroupForTile(tile)
+		}
+		if (inGroup !== inside) {
+			inGroup = inside
+		}
+	}
+	onTileChanged: refreshInGroup()
+	Component.onCompleted: refreshInGroup()
+
+	readonly property color defaultBackgroundColor: (isGroup || (inGroup && config.extendGroupBackground)) ? "transparent" : config.defaultTileColor
 	readonly property bool defaultShowIcon: isGroup ? false : true
 	readonly property int defaultTileW: isGroup ? 6 : 2
 	readonly property int defaultTileH: isGroup ? 1 : 2
@@ -23,9 +38,19 @@ QtObject {
 	readonly property bool iconFill: tile && typeof tile.iconFill !== "undefined" ? tile.iconFill : false
 	readonly property bool showIcon: tile && typeof tile.showIcon !== "undefined" ? tile.showIcon : defaultShowIcon
 	readonly property bool showLabel: tile && typeof tile.showLabel !== "undefined" ? tile.showLabel : true
-	readonly property color backgroundColor: tile && typeof tile.backgroundColor !== "undefined" ? tile.backgroundColor : defaultBackgroundColor
+	readonly property bool hasOwnBackgroundColor: tile && typeof tile.backgroundColor !== "undefined"
+	readonly property color backgroundColor: hasOwnBackgroundColor ? tile.backgroundColor : defaultBackgroundColor
 	readonly property string backgroundImage: tile && typeof tile.backgroundImage !== "undefined" ? tile.backgroundImage : ""
-	readonly property bool backgroundGradient: tile && typeof tile.gradient !== "undefined" ? tile.gradient : config.defaultTileGradient
+	readonly property bool backgroundGradient: {
+		if (tile && typeof tile.gradient !== "undefined") {
+			return tile.gradient
+		}
+		// A default gradient on a clear tile would paint over the group.
+		if (config.extendGroupBackground && (isGroup || inGroup) && !hasOwnBackgroundColor) {
+			return false
+		}
+		return config.defaultTileGradient
+	}
 
 	readonly property int tileX: tile && typeof tile.x !== "undefined" ? tile.x : 0
 	readonly property int tileY: tile && typeof tile.y !== "undefined" ? tile.y : 0
@@ -75,6 +100,7 @@ QtObject {
 			if (appObj.isGroup) {
 				appObj.groupRectChanged()
 			}
+			appObj.refreshInGroup()
 		}
 	}
 }

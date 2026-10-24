@@ -75,12 +75,15 @@ Rectangle {
 		visible: appObj.showIcon
 		source: appObj.iconSource
 		anchors.verticalCenter: parent.verticalCenter
+		// The view is taller than the title when a group background is extended.
+		// Keep the icon in the title row.
+		anchors.verticalCenterOffset: (appObj.isGroup && config.extendGroupBackground && appObj.groupRect) ? -(Math.max(0, appObj.groupRect.h) * cellBoxSize) / 2 : 0
 		anchors.horizontalCenter: parent.horizontalCenter
 		// property int size: 72 // Just a default, overriden in State change
 		property int size: Math.min(parent.width, parent.height) / 2
 		width: appObj.showIcon ? size : 0
 		height: appObj.showIcon ? size : 0
-		anchors.fill: appObj.iconFill ? parent : null
+		anchors.fill: (appObj.iconFill && !(appObj.isGroup && config.extendGroupBackground)) ? parent : null
 		smooth: appObj.iconFill || config.smallTileIcons
 	}
 
@@ -90,6 +93,8 @@ Rectangle {
 		text: appObj.labelText
 		anchors.top: parent.top
 		anchors.bottom: parent.bottom
+		// Leave the label in the title row when the background continues below it.
+		anchors.bottomMargin: (appObj.isGroup && config.extendGroupBackground && appObj.groupRect) ? Math.max(0, appObj.groupRect.h) * cellBoxSize : 0
 		anchors.leftMargin: tilePadding
 		anchors.rightMargin: tilePadding
 		anchors.left: parent.left

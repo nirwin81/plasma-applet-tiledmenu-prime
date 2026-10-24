@@ -177,24 +177,25 @@ LibConfig.FormKCM {
 				id: defaultTileColorRadioButton
 				text: i18n("Custom Color")
 				QQC2.ButtonGroup.group: tilesThemeGroup.group
-				checked: true
+				checked: !plasmoid.configuration.defaultTileTransparent
+				onClicked: plasmoid.configuration.defaultTileTransparent = false
 			}
 			LibConfig.ColorField {
 				id: defaultTileColorColor
 				configKey: 'defaultTileColor'
+				enabled: !plasmoid.configuration.defaultTileTransparent
 			}
 			LibConfig.CheckBox {
 				text: i18n("Gradient")
 				configKey: 'defaultTileGradient'
+				enabled: !plasmoid.configuration.defaultTileTransparent
 			}
 		}
 		QQC2.RadioButton {
 			text: i18n("Transparent")
 			QQC2.ButtonGroup.group: tilesThemeGroup.group
-			onClicked: {
-				defaultTileColorColor.text = "#00000000"
-				defaultTileColorRadioButton.checked = true
-			}
+			checked: plasmoid.configuration.defaultTileTransparent
+			onClicked: plasmoid.configuration.defaultTileTransparent = true
 		}
 	}
 	LibConfig.ComboBox {
@@ -218,6 +219,10 @@ LibConfig.FormKCM {
 	LibConfig.CheckBox {
 		text: i18n("Use dynamic pusher")
 		configKey: 'dynamicTilePusher'
+	}
+	LibConfig.CheckBox {
+		text: i18n("Extend group background behind its tiles")
+		configKey: 'extendGroupBackground'
 	}
 
 
@@ -449,8 +454,11 @@ LibConfig.FormKCM {
 			{ value: "Categories", text: i18n("Categories") },
 			{ value: "JumpToLetter", text: i18n("Jump To Letter") },
 			{ value: "JumpToCategory", text: i18n("Jump To Category") },
-			{ value: "TilesOnly", text: i18n("Tiles Only") },
 		]
+	}
+	LibConfig.CheckBox {
+		text: i18n("Remember the last sidebar view")
+		configKey: "rememberLastAppListView"
 	}
 
 	LibConfig.ComboBox {
