@@ -1,3 +1,4 @@
+import org.kde.plasma.components as PlasmaComponents3
 import QtQuick
 import QtQuick.Layouts
 
@@ -10,9 +11,8 @@ TileEditorGroupBox {
 	property alias isGroupEnabled: colorField.enabled
 	property string key: ''
 
-	TileEditorColorField {
+	PlasmaComponents3.TextField {
 		id: colorField
-		showPreviewBg: false
 		anchors.left: parent.left
 		anchors.right: parent.right
 		text: key && appObj.tile && appObj.tile[key] ? appObj.tile[key] : ''
