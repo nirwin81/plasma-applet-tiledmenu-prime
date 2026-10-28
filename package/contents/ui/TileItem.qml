@@ -18,6 +18,11 @@ Item {
 	property real targetY: appObj.tileY * cellBoxSize
 	x: targetX
 	y: targetY
+	// Extended group backgrounds sit behind their tiles. Cell hit targets
+	// drop to z -2 in that mode, so the group title stays at z -1 and still
+	// receives clicks. Otherwise every tile stays at z 0.
+	readonly property bool extendGroup: appObj.isGroup && config.extendGroupBackground
+	z: dragActive ? 1 : (extendGroup ? -1 : 0)
 	Behavior on targetX { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 	Behavior on targetY { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
@@ -26,7 +31,7 @@ Item {
 		targetY = Qt.binding(function(){ return appObj.tileY * cellBoxSize })
 		x = Qt.binding(function(){ return targetX })
 		y = Qt.binding(function(){ return targetY })
-		z = 0
+		z = Qt.binding(function(){ return tileItem.dragActive ? 1 : (tileItem.extendGroup ? -1 : 0) })
 	}
 
 	// IMPORTANT (Qt >= 6.10 / Plasma 6.8): the Repeater's `modelData` is a
@@ -44,16 +49,26 @@ Item {
 	readonly property int fadedWidth: width - cellPushedMargin
 	opacity: faded ? 0.75 : 1
 	scale: faded ? fadedWidth / width : 1
+	transformOrigin: extendGroup ? Item.Top : Item.Center
 	Behavior on opacity { NumberAnimation { duration: 200 } }
 	Behavior on scale { NumberAnimation { duration: 200 } }
 
 	//--- View Start
 	TileItemView {
 		id: tileItemView
-		anchors.fill: parent
+		anchors.left: parent.left
+		anchors.right: parent.right
+		anchors.top: parent.top
 		anchors.margins: cellMargin
-		width: appObj.tileW * cellBoxSize
-		height: appObj.tileH * cellBoxSize
+		// Groups keep a one-row title. When extended, the background continues
+		// through every row that belongs to the group.
+		height: {
+			var rows = appObj.tileH
+			if (tileItem.extendGroup && appObj.groupRect) {
+				rows += Math.max(0, appObj.groupRect.h)
+			}
+			return rows * cellBoxSize - 2 * cellMargin
+		}
 		readonly property int minSize: Math.min(width, height)
 		readonly property int maxSize: Math.max(width, height)
 		hovered: tileMouseArea.containsMouse
@@ -64,7 +79,11 @@ Item {
 		anchors.fill: parent
 		anchors.margins: cellMargin
 		hoverRadius: {
-			if (appObj.isGroup) {
+			// An extended group view is taller than its title. The outline
+			// follows the title, which is the tile item itself.
+			if (extendGroup) {
+				return Math.max(tileItem.width, tileItem.height) - 2 * cellMargin
+			} else if (appObj.isGroup) {
 				return tileItemView.maxSize
 			} else {
 				return tileItemView.minSize
@@ -125,7 +144,6 @@ Item {
 			tileGrid.startDrag(index)
 			tileGrid.dropOffsetX = 0
 			// tileGrid.dropOffsetY = 0
-			tileItem.z = 1
 			Drag.start()
 		} else {
 			console.log("drag finished")

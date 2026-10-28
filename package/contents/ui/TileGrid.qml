@@ -945,6 +945,10 @@ DropArea {
 
 					Item {
 						id: cellItem
+						// When group backgrounds extend, group titles sit at z -1.
+						// These cells must stay below them or a right-click on a
+						// group title opens "New Group" instead of the group's menu.
+						z: config.extendGroupBackground ? -2 : 0
 						property int modelX: modelData % columns
 						property int modelY: Math.floor(modelData / columns)
 						x: modelX * cellBoxSize
