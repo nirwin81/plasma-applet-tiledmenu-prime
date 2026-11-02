@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+	<defs id="defs3051">
+		<style type="text/css" id="current-color-scheme">
+			.ColorScheme-Text {
+				color:#232629;
+			}
+		</style>
+	</defs>
+	<!-- Outline of the largest (2x2) tile, for scale -->
+	<rect x="1.5" y="1.5" width="13" height="13"
+		style="fill:none;stroke:currentColor;stroke-width:1;opacity:0.35"
+		class="ColorScheme-Text"
+	/>
+	<!-- Tile footprint -->
+	<rect x="1" y="1" width="14" height="7"
+		style="fill:currentColor"
+		class="ColorScheme-Text"
+	/>
+</svg>
