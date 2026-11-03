@@ -71,6 +71,7 @@ Item {
 			}
 		}
 		hoverOutlineSize: tileGrid.hoverOutlineSize
+		radius: tileItemView.cornerRadius
 		mouseArea: tileMouseArea
 	}
 	//--- View End
@@ -155,6 +156,7 @@ Item {
 			color: "transparent"
 			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
 			border.color: "#80ffffff"
+			radius: tileItemView.cornerRadius
 			y: appObj.tileH * cellBoxSize
 			z: 100
 			width: appObj.groupRect.w * cellBoxSize

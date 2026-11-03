@@ -41,6 +41,7 @@ TileEditorGroupBox {
 			folderField.text = appObj.liveFolder
 			shuffleCheckBox.checked = appObj.liveShuffle
 			recursiveCheckBox.checked = appObj.liveRecursive
+			mediaAppOnlyCheckBox.checked = appObj.liveMediaAppOnly
 			liveGroup.updateOnChange = true
 		}
 	}
@@ -59,6 +60,7 @@ TileEditorGroupBox {
 				{ text: i18n("Clock"), value: "clock" },
 				{ text: i18n("Command output"), value: "command" },
 				{ text: i18n("Slideshow"), value: "slideshow" },
+				{ text: i18n("Media player"), value: "media" },
 			]
 			onActivated: liveGroup.setField('liveType', currentValue)
 		}
@@ -132,6 +134,13 @@ TileEditorGroupBox {
 			visible: appObj.liveType === "slideshow"
 			text: i18n("Include subfolders")
 			onToggled: liveGroup.setField('liveRecursive', checked)
+		}
+
+		PlasmaComponents3.CheckBox {
+			id: mediaAppOnlyCheckBox
+			visible: appObj.liveType === "media"
+			text: i18n("Only show this app's player")
+			onToggled: liveGroup.setField('liveMediaAppOnly', checked)
 		}
 
 		PlasmaComponents3.CheckBox {

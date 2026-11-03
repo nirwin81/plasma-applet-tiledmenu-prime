@@ -78,6 +78,9 @@
 		<entry name="tileMargin" type="double">
 			<default>5</default>
 		</entry>
+		<entry name="tileCornerRadius" type="int">
+			<default>0</default>
+		</entry>
 		<entry name="smallTileIcons" type="bool">
 			<default>false</default>
 		</entry>

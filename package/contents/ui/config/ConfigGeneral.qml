@@ -162,6 +162,14 @@ LibConfig.FormKCM {
 		minimumValue: 0
 		maximumValue: config.cellBoxUnits/2
 	}
+	LibConfig.SpinBox {
+		configKey: 'tileCornerRadius'
+		Kirigami.FormData.label: i18n("Tile Corner Rounding")
+		suffix: i18n("px")
+		minimumValue: 0
+		// Half a 1x1 tile: at this value 1x1 tiles are circles.
+		maximumValue: config.tileCornerRadiusMaxUnits
+	}
 	LibConfig.CheckBox {
 		text: i18n("Use smaller tile icons")
 		configKey: 'smallTileIcons'
