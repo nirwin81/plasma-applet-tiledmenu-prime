@@ -238,7 +238,7 @@ Item {
 		id: powerActionsModel
 		onItemTriggered: {
 			// console.log('powerActionsModel.onItemTriggered')
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 		
 		function nameByIconName(iconName) {
@@ -262,7 +262,7 @@ Item {
 		id: sessionActionsModel
 		onItemTriggered: {
 			// console.log('sessionActionsModel.onItemTriggered')
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 
 		function parseSourceModel(powerActionsModel) {
@@ -284,7 +284,7 @@ Item {
 		id: allAppsModel
 		onItemTriggered: {
 			// console.log('allAppsModel.onItemTriggered')
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 
 		function getRecentApps() {

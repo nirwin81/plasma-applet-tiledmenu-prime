@@ -76,9 +76,15 @@ MouseArea {
 	hoverEnabled: true
 	// cursorShape: Qt.PointingHandCursor
 
-	property bool wasExpanded
-	onPressed: wasExpanded = widget.expanded
-	onClicked: widget.expanded = !wasExpanded
+	property bool wasOpen
+	onPressed: wasOpen = plasmoid.configuration.fullscreen ? widget.fullscreenVisible : widget.expanded
+	onClicked: {
+		if (wasOpen) {
+			widget.closeMenu()
+		} else {
+			widget.toggleMenu()
+		}
+	}
 
 	property alias activateOnDrag: dropArea.enabled
 	DragAndDrop.DropArea {
@@ -100,6 +106,10 @@ MouseArea {
 		id: dragHoverTimer
 		interval: 250 // Same as taskmanager's activationTimer in MouseHandler.qml
 		running: dropArea.containsDrag
-		onTriggered: widget.expanded = true
+		onTriggered: {
+			if (!widget.fullscreenVisible && !widget.expanded) {
+				widget.toggleMenu()
+			}
+		}
 	}
 }

@@ -150,6 +150,11 @@ Item {
 	readonly property int searchResultsDirection: plasmoid.configuration.searchResultsReversed ? ListView.BottomToTop : ListView.TopToBottom
 	
 	//--- Tile Data
+	// Bumped whenever a TileGrid changes the (shared) tile array. The normal
+	// popup and the fullscreen window each have their own TileGrid, and one
+	// grid's tileModelChanged() doesn't refresh the other, so each Popup
+	// compares this against the revision it last displayed (Popup.syncTiles).
+	property int tileModelRevision: 0
 	property var tileModel: Base64JsonString {
 		configKey: 'tileModel'
 		defaultValue: []

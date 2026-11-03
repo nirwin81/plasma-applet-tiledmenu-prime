@@ -8,19 +8,21 @@ Kicker.SimpleFavoritesModel {
 	// https://github.com/KDE/plasma-desktop/blob/master/applets/kicker/plugin/appentry.cpp#L151
 	id: kickerAppModel
 
-	signal triggerIndex(int index)
-	onTriggerIndex: {
+	function triggerIndex(index) {
 		var closeRequested = kickerAppModel.trigger(index, "", null)
 		if (closeRequested) {
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 	}
 
-	signal triggerIndexAction(int index, string actionId, string actionArgument)
-	onTriggerIndexAction: {
+	// actionArgument must stay untyped: for .desktop file actions (e.g. Steam's
+	// "Library") Kicker passes a KServiceAction, which a `string` parameter
+	// would flatten, making Kicker launch an empty action and crash in
+	// KService::setExec.
+	function triggerIndexAction(index, actionId, actionArgument) {
 		var closeRequested = kickerAppModel.trigger(index, actionId, actionArgument)
 		if (closeRequested) {
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 	}
 

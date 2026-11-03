@@ -11,6 +11,18 @@ MouseArea {
 	property alias tileEditorViewLoader: searchView.tileEditorViewLoader
 	property alias tileGrid: tileGrid
 
+	// See AppletConfig.tileModelRevision.
+	property int shownTileRevision: 0
+	property bool syncingTiles: false
+	function syncTiles() {
+		if (shownTileRevision != config.tileModelRevision) {
+			shownTileRevision = config.tileModelRevision
+			syncingTiles = true
+			tileGrid.tileModelChanged() // Rebuild the tile Repeater.
+			syncingTiles = false
+		}
+	}
+
 	RowLayout {
 		anchors.fill: parent
 		spacing: 0
@@ -39,7 +51,14 @@ MouseArea {
 
 			onEditTile: function(tileIndex) { tileEditorViewLoader.open(tileIndex) }
 
-			onTileModelChanged: saveTileModel.restart()
+			onTileModelChanged: {
+				if (popup.syncingTiles) {
+					return
+				}
+				config.tileModelRevision += 1
+				popup.shownTileRevision = config.tileModelRevision
+				saveTileModel.restart()
+			}
 			Timer {
 				id: saveTileModel
 				interval: 2000

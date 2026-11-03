@@ -210,7 +210,7 @@ ListModel {
 		var runner = runnerModel.modelForRow(model.runnerIndex)
 		var closeRequested = runner.trigger(model.runnerItemIndex, "", null)
 		if (closeRequested) {
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 		itemTriggered()
 	}
@@ -285,7 +285,7 @@ ListModel {
 		var closeRequested = runner.trigger(entry.runnerItemIndex, actionId, actionArgument)
 		if (closeRequested) 
 		{
-			plasmoid.expanded = false
+			widget.closeMenu()
 		}
 		itemTriggered()
 
