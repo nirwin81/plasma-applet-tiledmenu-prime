@@ -1,3 +1,8 @@
+## Unreleased
+
+* Add Live Tiles: a tile can show a clock or the output of a shell command, optionally alternating with its normal face (Edit Tile > Live Tile)
+* Importing a layout that contains new live tile commands now asks before saving (Accept / Remove commands / Cancel); commands using `rm` are always removed
+
 ## v1.1.0 - November 03 2026
 
 * Fix Fullscreen mode

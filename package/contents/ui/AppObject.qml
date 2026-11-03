@@ -27,7 +27,23 @@ QtObject {
 	readonly property string backgroundImage: tile && typeof tile.backgroundImage !== "undefined" ? tile.backgroundImage : ""
 	readonly property bool backgroundGradient: tile && typeof tile.gradient !== "undefined" ? tile.gradient : config.defaultTileGradient
 
-	readonly property int tileX: tile && typeof tile.x !== "undefined" ? tile.x : 0
+	// Live tiles: a tile with a known `liveType` shows a dynamic face
+	// (live/<Type>LiveTile.qml) on top of / alternating with its normal face.
+	// Fields are kept flat on the tile (not a nested object) so the same
+	// tileChanged() re-emit used for every other field keeps bindings fresh.
+	readonly property var liveTileSources: ({
+		"clock": "live/ClockLiveTile.qml",
+		"command": "live/CommandLiveTile.qml",
+	})
+	readonly property string liveType: tile && tile.liveType || ""
+	readonly property string liveSource: liveTileSources[liveType] || ""
+	readonly property bool isLive: !isGroup && liveSource !== ""
+	readonly property bool liveCycle: tile && typeof tile.liveCycle !== "undefined" ? tile.liveCycle : true
+	readonly property string liveFormat: tile && tile.liveFormat || ""
+	readonly property string liveCommand: tile && tile.liveCommand || ""
+	readonly property int liveInterval: tile && tile.liveInterval > 0 ? tile.liveInterval : 60
+
+	readonly property int tileX:tile && typeof tile.x !== "undefined" ? tile.x : 0
 	readonly property int tileY: tile && typeof tile.y !== "undefined" ? tile.y : 0
 	readonly property int tileW: tile && typeof tile.w !== "undefined" ? tile.w : defaultTileW
 	readonly property int tileH: tile && typeof tile.h !== "undefined" ? tile.h : defaultTileH

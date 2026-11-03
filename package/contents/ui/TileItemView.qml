@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 
@@ -24,6 +25,24 @@ Rectangle {
 	readonly property int labelAlignment: appObj.isGroup ? config.groupLabelAlignment : config.tileLabelAlignment
 
 	property bool hovered: false
+
+	//--- Live tile
+	// Only animate/poll while the menu window is actually shown, so live tiles
+	// cost nothing while the menu is closed.
+	readonly property bool liveActive: appObj.isLive && Window.window !== null && Window.window.visible
+	property bool liveFaceToggle: true
+	readonly property bool liveFaceShown: appObj.isLive && (!appObj.liveCycle || liveFaceToggle)
+	readonly property real staticFaceOpacity: liveFaceShown ? 0 : 1
+	clip: appObj.isLive
+
+	Timer {
+		// Stagger tiles so they don't all flip at the same moment.
+		interval: 5000 + Math.floor(Math.random() * 4000)
+		running: tileItemView.liveActive && appObj.liveCycle
+		repeat: true
+		onTriggered: tileItemView.liveFaceToggle = !tileItemView.liveFaceToggle
+		onRunningChanged: if (!running) tileItemView.liveFaceToggle = true
+	}
 
 	// State conditions read appObj (QML properties) instead of modelData
 	// (plain JS object): Qt >= 6.10 (Plasma 6.8) no longer tracks JS-object
@@ -63,6 +82,8 @@ Rectangle {
 		id: backgroundImage
 		anchors.fill: parent
 		visible: appObj.backgroundImage
+		opacity: tileItemView.staticFaceOpacity
+		Behavior on opacity { NumberAnimation { duration: 300 } }
 		source: appObj.backgroundImage
 		fillMode: Image.PreserveAspectCrop
 		asynchronous: true
@@ -73,6 +94,8 @@ Rectangle {
 	Kirigami.Icon {
 		id: icon
 		visible: appObj.showIcon
+		opacity: tileItemView.staticFaceOpacity
+		Behavior on opacity { NumberAnimation { duration: 300 } }
 		source: appObj.iconSource
 		anchors.verticalCenter: parent.verticalCenter
 		anchors.horizontalCenter: parent.horizontalCenter
@@ -87,6 +110,8 @@ Rectangle {
 	PlasmaComponents3.Label {
 		id: label
 		visible: appObj.showLabel
+		opacity: tileItemView.staticFaceOpacity
+		Behavior on opacity { NumberAnimation { duration: 300 } }
 		text: appObj.labelText
 		anchors.top: parent.top
 		anchors.bottom: parent.bottom
@@ -101,5 +126,47 @@ Rectangle {
 		renderType: Text.QtRendering // Fix pixelation when scaling. Plasma.Label uses NativeRendering.
 		style: Text.Outline
 		styleColor: appObj.backgroundGradient ? tileItemView.gradientBottomColor : appObj.backgroundColor
+	}
+
+	// Slides up over the static face (Windows-style "peek"). Live tile
+	// components are loaded from live/ and can read `appObj` and
+	// `tileItemView` (liveActive, tilePadding) from this context.
+	Item {
+		id: liveFace
+		visible: appObj.isLive
+		width: parent.width
+		height: parent.height
+		y: tileItemView.liveFaceShown ? 0 : height
+		Behavior on y { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
+
+		Rectangle {
+			id: liveBackground
+			anchors.fill: parent
+			color: appObj.backgroundColor
+			gradient: appObj.backgroundGradient ? tileGradient.createObject(liveBackground) : null
+		}
+
+		Loader {
+			id: liveLoader
+			anchors.fill: parent
+			anchors.margins: tilePadding
+			anchors.bottomMargin: liveLabel.visible ? liveLabel.height + tilePadding : tilePadding
+			active: appObj.isLive
+			source: appObj.liveSource
+		}
+
+		PlasmaComponents3.Label {
+			id: liveLabel
+			visible: appObj.showLabel && appObj.tileW >= 2 && appObj.tileH >= 2
+			text: appObj.labelText
+			anchors.left: parent.left
+			anchors.right: parent.right
+			anchors.bottom: parent.bottom
+			anchors.margins: tilePadding
+			elide: Text.ElideRight
+			horizontalAlignment: labelAlignment
+			font.pointSize: Kirigami.Theme.smallFont.pointSize
+			renderType: Text.QtRendering
+		}
 	}
 }
