@@ -65,6 +65,21 @@ Item {
 		PlasmaExtras.MenuItem { separator: true }
 	}
 
+	// Based off kicker's ActionMenu submenu pattern: a MenuItem that owns a
+	// child Menu parented to its QAction.
+	Component {
+		id: submenuItemComponent
+		PlasmaExtras.MenuItem {
+			id: submenuItem
+			property PlasmaExtras.Menu submenu: PlasmaExtras.Menu {
+				visualParent: submenuItem.action
+			}
+			function newMenuItem() {
+				return menuItemComponent.createObject(submenu)
+			}
+		}
+	}
+
 	Component {
 		id: contextMenuComponent
 
@@ -77,6 +92,9 @@ Item {
 			}
 			function newMenuItem() {
 				return menuItemComponent.createObject(contextMenu)
+			}
+			function newSubMenuItem() {
+				return submenuItemComponent.createObject(contextMenu)
 			}
 
 			function addPinToMenuAction(favoriteId) {

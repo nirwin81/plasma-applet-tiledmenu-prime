@@ -179,6 +179,9 @@ Item {
 						tileGrid.sortGroupTiles(appObj.tile)
 					})
 				}
+				if (!appObj.isGroup) {
+					tileItem.addTileSizeMenu(menu)
+				}
 				var menuItem = menu.newMenuItem()
 				menuItem.text = i18n("Edit Tile")
 				menuItem.icon = 'rectangle-shape'
@@ -187,6 +190,51 @@ Item {
 				})
 			}
 		}
+	}
+
+	// Icons are local SVGs; QMenu resolves the icon string via the icon
+	// loader, which accepts an absolute file path (not a file:// URL).
+	function tileSizeIconPath(name) {
+		return Qt.resolvedUrl("../icons/" + name + ".svg").toString().replace(/^file:\/\//, '')
+	}
+
+	function addTileSizeMenu(menu) {
+		var sizeMenuItem = menu.newSubMenuItem()
+		if (!sizeMenuItem) {
+			return
+		}
+		sizeMenuItem.text = i18n("Tile size")
+		sizeMenuItem.icon = 'transform-scale'
+
+		var sizes = [
+			{ w: 1, h: 1 },
+			{ w: 2, h: 1 },
+			{ w: 2, h: 2 },
+		]
+		sizes.forEach(function(size) {
+			var sizeItem = sizeMenuItem.newMenuItem()
+			sizeItem.text = ''
+			sizeItem.icon = tileSizeIconPath('tile-size-' + size.w + 'x' + size.h)
+			sizeItem.checkable = true
+			sizeItem.checked = appObj.tileW == size.w && appObj.tileH == size.h
+			sizeItem.clicked.connect(function() {
+				tileItem.setTileSize(size.w, size.h)
+			})
+		})
+		// Items created with a Menu as parent are added to it automatically.
+	}
+
+	function setTileSize(w, h) {
+		// Mutate the real array element (see note on AppObject above), then
+		// notify like TileEditorRectField does.
+		var tile = tileModel[index]
+		if (!tile || (tile.w == w && tile.h == h)) {
+			return
+		}
+		tile.w = w
+		tile.h = h
+		appObj.tileChanged()
+		tileGrid.tileModelChanged()
 	}
 
 	function openTileEditor() {
