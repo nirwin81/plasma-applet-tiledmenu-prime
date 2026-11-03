@@ -79,7 +79,7 @@ PlasmaComponents4.TextField {
             }
             break;
         case Qt.Key_Escape:
-            plasmoid.expanded = false;
+            widget.closeMenu();
             break;
         }
     }

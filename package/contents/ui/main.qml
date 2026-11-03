@@ -1,7 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Window
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
+import org.kde.ksvg as KSvg
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.private.kicker as Kicker
@@ -12,6 +14,44 @@ import "lib"
 
 PlasmoidItem {
 	id: widget
+	property bool fullscreenVisible: false
+
+	function prepareMenu(popupItem) {
+		popupItem.syncTiles()
+		search.query = ""
+		search.applyDefaultFilters()
+		popupItem.searchView.searchField.forceActiveFocus()
+		popupItem.searchView.showDefaultView()
+		justOpenedTimer.start()
+	}
+
+	function openFullscreenMenu() {
+		fullscreenVisible = true
+		if (widget.Window.window && widget.Window.window.screen) {
+			fullscreenWindow.screen = widget.Window.window.screen
+		}
+		fullscreenPopup.syncTiles() // Before showing, to avoid a flash of stale tiles.
+		fullscreenWindow.showMaximized()
+		Qt.callLater(function() { prepareMenu(fullscreenPopup) })
+	}
+
+	function closeMenu() {
+		expanded = false
+		fullscreenVisible = false
+		fullscreenWindow.hide()
+	}
+
+	function toggleMenu() {
+		if (plasmoid.configuration.fullscreen) {
+			if (fullscreenVisible) {
+				closeMenu()
+			} else {
+				openFullscreenMenu()
+			}
+		} else {
+			expanded = !expanded
+		}
+	}
 
 	Logger {
 		id: logger
@@ -106,26 +146,76 @@ PlasmoidItem {
 	activationTogglesExpanded: true
 	onExpandedChanged: function(expanded) {
 		if (expanded) {
-			search.query = ""
-			search.applyDefaultFilters()
-			// config.showSearch = false
-			// TODO popup is an invalid reference here for some reason
-			fullRepresentationItem.searchView.searchField.forceActiveFocus()
-			fullRepresentationItem.searchView.showDefaultView()
+			if (plasmoid.configuration.fullscreen) {
+				widget.expanded = false
+				Qt.callLater(openFullscreenMenu)
+				return
+			}
+			prepareMenu(fullRepresentationItem)
 
 			// Debug TileEditorView
 			// fullRepresentationItem.tileGrid.addDefaultTiles()
 			// var testTile = fullRepresentationItem.tileGrid.getTileAt(0, 1)
 			// fullRepresentationItem.tileGrid.editTile(testTile)
 
-			// Show icon active effect without hovering
-			justOpenedTimer.start()
+		}
+	}
+
+	Connections {
+		target: plasmoid.configuration
+		function onFullscreenChanged() {
+			widget.closeMenu()
 		}
 	}
 	Timer {
 		id: justOpenedTimer
 		repeat: false
 		interval: 600
+	}
+
+	Window {
+		id: fullscreenWindow
+		title: i18n("Tiled Menu Prime")
+		flags: Qt.Window | Qt.FramelessWindowHint
+		color: fullscreenBackground.color
+		onActiveChanged: {
+			if (visible && !active && !widget.userConfiguring) {
+				widget.closeMenu()
+			}
+		}
+
+		Shortcut {
+			sequence: "Escape"
+			onActivated: widget.closeMenu()
+		}
+
+		// Fallback if the Plasma theme has no dialog background image.
+		Rectangle {
+			id: fullscreenBackground
+			anchors.fill: parent
+			color: Kirigami.Theme.backgroundColor
+		}
+
+		// The normal popup's look comes from the Plasma theme's dialog
+		// background image, not a theme colour (e.g. Oxygen's window colour is
+		// pure black). Draw the centre of the opaque variant of that image.
+		// It is rendered at 1/8 size and scaled up, because rendering it at
+		// fullscreen size can exceed Qt's 256MB image allocation limit.
+		KSvg.SvgItem {
+			readonly property int downscale: 8
+			imagePath: "opaque/dialogs/background"
+			elementId: "center"
+			width: Math.ceil(parent.width / downscale)
+			height: Math.ceil(parent.height / downscale)
+			transformOrigin: Item.TopLeft
+			scale: downscale
+			smooth: true
+		}
+
+		Popup {
+			id: fullscreenPopup
+			anchors.fill: parent
+		}
 	}
 
 	// property alias searchResultsView: popup.searchView.searchResultsView
