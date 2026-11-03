@@ -30,6 +30,9 @@ ColumnLayout {
 		delete appObj.tile.liveFormat
 		delete appObj.tile.liveCommand
 		delete appObj.tile.liveInterval
+		delete appObj.tile.liveFolder
+		delete appObj.tile.liveShuffle
+		delete appObj.tile.liveRecursive
 		appObj.tileChanged()
 		tileGrid.tileModelChanged()
 	}

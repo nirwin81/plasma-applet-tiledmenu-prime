@@ -149,10 +149,23 @@ Rectangle {
 		Loader {
 			id: liveLoader
 			anchors.fill: parent
-			anchors.margins: tilePadding
-			anchors.bottomMargin: liveLabel.visible ? liveLabel.height + tilePadding : tilePadding
+			anchors.margins: appObj.liveFullBleed ? 0 : tilePadding
+			anchors.bottomMargin: appObj.liveFullBleed ? 0 : liveLabel.visible ? liveLabel.height + tilePadding : tilePadding
 			active: appObj.isLive
 			source: appObj.liveSource
+		}
+
+		Rectangle {
+			// Keeps the label readable over full-bleed content (photos).
+			visible: appObj.liveFullBleed && liveLabel.visible
+			anchors.left: parent.left
+			anchors.right: parent.right
+			anchors.bottom: parent.bottom
+			height: liveLabel.height + tilePadding * 4
+			gradient: Gradient {
+				GradientStop { position: 0.0; color: "transparent" }
+				GradientStop { position: 1.0; color: "#99000000" }
+			}
 		}
 
 		PlasmaComponents3.Label {
@@ -167,6 +180,7 @@ Rectangle {
 			horizontalAlignment: labelAlignment
 			font.pointSize: Kirigami.Theme.smallFont.pointSize
 			renderType: Text.QtRendering
+			color: appObj.liveFullBleed ? "white" : Kirigami.Theme.textColor
 		}
 	}
 }

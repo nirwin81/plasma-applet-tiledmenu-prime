@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Dialogs as QtDialogs
 import org.kde.plasma.components as PlasmaComponents3
 
 // Live tile settings: type selector plus the per-type fields.
@@ -37,6 +38,9 @@ TileEditorGroupBox {
 			formatField.text = appObj.liveFormat
 			commandField.text = appObj.liveCommand
 			intervalSpinBox.value = appObj.liveInterval
+			folderField.text = appObj.liveFolder
+			shuffleCheckBox.checked = appObj.liveShuffle
+			recursiveCheckBox.checked = appObj.liveRecursive
 			liveGroup.updateOnChange = true
 		}
 	}
@@ -54,6 +58,7 @@ TileEditorGroupBox {
 				{ text: i18n("None"), value: "" },
 				{ text: i18n("Clock"), value: "clock" },
 				{ text: i18n("Command output"), value: "command" },
+				{ text: i18n("Slideshow"), value: "slideshow" },
 			]
 			onActivated: liveGroup.setField('liveType', currentValue)
 		}
@@ -84,9 +89,62 @@ TileEditorGroupBox {
 		}
 
 		RowLayout {
-			visible: appObj.liveType === "command"
+			visible: appObj.liveType === "slideshow"
+			PlasmaComponents3.TextField {
+				id: folderField
+				Layout.fillWidth: true
+				placeholderText: i18n("Image folder (default: Pictures)")
+				onEditingFinished: if (liveGroup.updateOnChange && text !== appObj.liveFolder) liveGroup.setField('liveFolder', text)
+			}
+			PlasmaComponents3.Button {
+				icon.name: "folder-open"
+				onClicked: {
+					// Commit a typed-but-unconfirmed path so the dialog opens there.
+					if (folderField.text !== appObj.liveFolder) {
+						liveGroup.setField('liveFolder', folderField.text)
+					}
+					folderDialogLoader.active = true
+				}
+
+				Loader {
+					id: folderDialogLoader
+					active: false
+					sourceComponent: QtDialogs.FolderDialog {
+						title: i18n("Choose an image folder")
+						modality: Qt.WindowModal
+						// Start in the current folder (Pictures when none is set).
+						currentFolder: appObj.liveFolderUrl
+						onAccepted: {
+							var path = selectedFolder.toString().replace(/^file:\/\//, '')
+							folderField.text = decodeURIComponent(path)
+							liveGroup.setField('liveFolder', folderField.text)
+							folderDialogLoader.active = false
+						}
+						onRejected: folderDialogLoader.active = false
+						Component.onCompleted: open()
+					}
+				}
+			}
+		}
+
+		PlasmaComponents3.CheckBox {
+			id: recursiveCheckBox
+			visible: appObj.liveType === "slideshow"
+			text: i18n("Include subfolders")
+			onToggled: liveGroup.setField('liveRecursive', checked)
+		}
+
+		PlasmaComponents3.CheckBox {
+			id: shuffleCheckBox
+			visible: appObj.liveType === "slideshow"
+			text: i18n("Shuffle")
+			onToggled: liveGroup.setField('liveShuffle', checked)
+		}
+
+		RowLayout {
+			visible: appObj.liveType === "command" || appObj.liveType === "slideshow"
 			PlasmaComponents3.Label {
-				text: i18n("Refresh every (seconds):")
+				text: appObj.liveType === "slideshow" ? i18n("Change image every (seconds):") : i18n("Refresh every (seconds):")
 			}
 			PlasmaComponents3.SpinBox {
 				id: intervalSpinBox
