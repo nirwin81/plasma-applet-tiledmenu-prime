@@ -1,3 +1,9 @@
+## v1.1.0 - November 03 2026
+
+* Fix Fullscreen mode
+* Fix context menu crash
+* Add Tile Size submenu to quickly set tile size to 3 common sizes
+
 ## v1.0.4 - October 28 2026
 
 * Fix a TileItem context menu crash in Plasma 6.8 (original change by StarchildCatalystN7)
