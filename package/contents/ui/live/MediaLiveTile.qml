@@ -1,12 +1,9 @@
+import QtQml
 import QtQuick
 import QtQuick.Window
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
-// Private Plasma module (ships with plasma-workspace; used by the Media
-// Player widget and lock screen). Its API is not guaranteed between Plasma
-// releases: if this import fails, TileItemView's Loader logs the error and
-// the tile keeps its normal face. Calls into it below are defensive too.
-import org.kde.plasma.private.mpris as Mpris
+import org.kde.plasma.private.mpris as Mpris	// ships with plasma-workspace
 
 // Live tile: now playing (album art, track, artist) from any MPRIS player.
 // Tile fields: liveMediaAppOnly (bool) - only follow the player belonging
@@ -31,6 +28,17 @@ Item {
 		onRowsRemoved: mediaLiveTile.updatePlayer("rowsRemoved")
 	}
 
+	// Every player, for the apps playerForLauncherUrl() can't match.
+	Instantiator {
+		id: allPlayers
+		model: mpris
+		delegate: QtObject {
+			readonly property QtObject player: model.container || null
+		}
+		onObjectAdded: mediaLiveTile.updatePlayer("playerAdded")
+		onObjectRemoved: mediaLiveTile.updatePlayer("playerRemoved")
+	}
+
 	// QObject-typed, so it resets to null by itself if the player goes away.
 	property QtObject player: null
 	property bool apiWarned: false
@@ -43,7 +51,7 @@ Item {
 	}
 	Component.onCompleted: updatePlayer("completed")
 
-	// "org.kde.elisa.desktop", "applications:org.kde.elisa.desktop" or a
+	// Get name in form of "applications:org.kde.elisa.desktop" or a
 	// file path -> launcher URL in the form the task manager passes.
 	function launcherUrl() {
 		var id = appObj.favoriteId
@@ -76,14 +84,46 @@ Item {
 		} catch (e) {
 			if (!apiWarned) {
 				apiWarned = true
-				console.warn(logPrefix, "Mpris2Model.playerForLauncherUrl(" + url + ") threw:", String(e), "- falling back to the active player.")
+				console.warn(logPrefix, "Mpris2Model.playerForLauncherUrl(" + url + ") threw:", e, "- falling back to the active player.")
 			}
 			return null
 		}
 	}
 
+	// "applications:org.kde.elisa.desktop?wmClass=x" -> "org.kde.elisa"
+	function desktopId(id) {
+		var name = (id || "").split("?")[0]
+		name = name.substring(Math.max(name.lastIndexOf("/"), name.lastIndexOf(":")) + 1)
+		return name.replace(/\.desktop$/, "").toLowerCase()
+	}
+
+	function lastSegment(id) {
+		return id.substring(id.lastIndexOf(".") + 1)
+	}
+
+	// Some players report a bare desktop entry that differs from their desktop
+	// file's name: Clementine reports "clementine", but is installed as
+	// "org.clementine_player.Clementine.desktop". Two reverse-DNS names must not
+	// match this way, as org.a.player and org.b.player are different apps.
+	function findPlayerByShortName() {
+		var appId = desktopId(appObj.favoriteId)
+		if (!appId) {
+			return null
+		}
+		for (var i = 0; i < allPlayers.count; i++) {
+			var row = allPlayers.objectAt(i)
+			var candidate = row ? row.player : null
+			var entry = candidate ? desktopId(candidate.desktopEntry) : ""
+			if (entry && (entry.indexOf(".") < 0 || appId.indexOf(".") < 0)
+					&& lastSegment(entry) === lastSegment(appId)) {
+				return candidate
+			}
+		}
+		return null
+	}
+
 	function updatePlayer(reason) {
-		var found = findAppPlayer()
+		var found = findAppPlayer() || findPlayerByShortName()
 		var source = found ? "app" : ""
 		if (!found && !appOnly) {
 			found = mpris.currentPlayer || null
@@ -94,12 +134,12 @@ Item {
 			found = null
 		}
 		if (found !== player) {
-			logger.debug(logPrefix, "player ->", found ? ((found.identity || "<unnamed player>") + " (" + source + ")") : "none", "reason:", reason, "launcherUrl:", launcherUrl() || "<none>", "appOnly:", appOnly)
+			logger.debug(logPrefix, "player ->", found ? (found.identity + " (" + source + ")") : "none", "reason:", reason, "launcherUrl:", launcherUrl(), "appOnly:", appOnly)
 			player = found
 		}
 	}
 
-	onLiveAvailableChanged: logger.debug(logPrefix, "liveAvailable:", liveAvailable, "status:", player ? player.playbackStatus : "<no player>")
+	onLiveAvailableChanged: logger.debug(logPrefix, "liveAvailable:", liveAvailable, player ? "status: " + player.playbackStatus : "")
 
 	readonly property string track: player ? (player.track || "") : ""
 	readonly property string artist: player ? (player.artist || "") : ""
@@ -122,7 +162,7 @@ Item {
 		sourceSize.height: height * Screen.devicePixelRatio
 		onStatusChanged: {
 			if (status === Image.Error) {
-				console.warn(mediaLiveTile.logPrefix, "Failed to load album art:", source.toString() || "<empty url>")
+				console.warn(mediaLiveTile.logPrefix, "Failed to load album art:", source)
 			}
 		}
 	}

@@ -4,8 +4,6 @@ import org.kde.plasma.core as PlasmaCore
 
 Item {
 	id: tileItem
-	property int pushedFromX: -1
-	property int pushedFromY: -1
 	// Width/height/position are read through appObj (QML properties) rather than
 	// a plain JS object, because Qt >= 6.10 (Plasma 6.8) no longer tracks
 	// JS-object property changes in bindings. appObj re-emits its `tile`
