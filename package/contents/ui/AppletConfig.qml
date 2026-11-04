@@ -137,6 +137,16 @@ Item {
 			return Text.AlignLeft
 		}
 	}
+	readonly property int groupLabelVerticalAlignment: {
+		var val = plasmoid.configuration.groupLabelVerticalAlignment
+		if (val === 'top') {
+			return Text.AlignTop
+		} else if (val === 'bottom') {
+			return Text.AlignBottom
+		} else { // center
+			return Text.AlignVCenter
+		}
+	}
 	readonly property bool dynamicTilePusher: {
 		return plasmoid.configuration.dynamicTilePusher
 	}

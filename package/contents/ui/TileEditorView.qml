@@ -34,6 +34,7 @@ ColumnLayout {
 		delete appObj.tile.liveShuffle
 		delete appObj.tile.liveRecursive
 		delete appObj.tile.liveMediaAppOnly
+		delete appObj.tile.liveNotificationPreview
 		appObj.tileChanged()
 		tileGrid.tileModelChanged()
 	}

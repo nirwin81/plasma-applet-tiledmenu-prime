@@ -37,6 +37,7 @@ QtObject {
 		"command": "live/CommandLiveTile.qml",
 		"slideshow": "live/SlideshowLiveTile.qml",
 		"media": "live/MediaLiveTile.qml",
+		"notifications": "live/NotificationsLiveTile.qml",
 	})
 	// Types whose content should fill the tile edge to edge (no padding,
 	// label drawn over a scrim).
@@ -52,6 +53,7 @@ QtObject {
 	readonly property bool liveShuffle: tile && tile.liveShuffle || false
 	readonly property bool liveRecursive: tile && tile.liveRecursive || false
 	readonly property bool liveMediaAppOnly: tile && tile.liveMediaAppOnly || false
+	readonly property bool liveNotificationPreview: tile && tile.liveNotificationPreview || false
 	// liveFolder as a file:// URL: accepts a plain path, "~/..." or a URL;
 	// empty means the user's Pictures folder.
 	readonly property string liveFolderUrl: {

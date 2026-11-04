@@ -86,7 +86,7 @@ Rectangle {
 			}
 			PropertyChanges { target: icon; anchors.leftMargin: tilePadding }
 			PropertyChanges { target: label
-				verticalAlignment: Text.AlignVCenter
+				verticalAlignment: appObj.isGroup ? config.groupLabelVerticalAlignment : Text.AlignVCenter
 			}
 			AnchorChanges { target: label
 				anchors.left: icon.right
@@ -145,7 +145,7 @@ Rectangle {
 		anchors.right: parent.right
 		wrapMode: Text.Wrap
 		horizontalAlignment: labelAlignment
-		verticalAlignment: Text.AlignBottom
+		verticalAlignment: appObj.isGroup ? config.groupLabelVerticalAlignment : Text.AlignBottom
 		width: parent.width
 		renderType: Text.QtRendering // Fix pixelation when scaling. Plasma.Label uses NativeRendering.
 		style: Text.Outline

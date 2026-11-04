@@ -42,6 +42,7 @@ TileEditorGroupBox {
 			shuffleCheckBox.checked = appObj.liveShuffle
 			recursiveCheckBox.checked = appObj.liveRecursive
 			mediaAppOnlyCheckBox.checked = appObj.liveMediaAppOnly
+			notificationPreviewCheckBox.checked = appObj.liveNotificationPreview
 			liveGroup.updateOnChange = true
 		}
 	}
@@ -61,6 +62,7 @@ TileEditorGroupBox {
 				{ text: i18n("Command output"), value: "command" },
 				{ text: i18n("Slideshow"), value: "slideshow" },
 				{ text: i18n("Media player"), value: "media" },
+				{ text: i18n("Notification count"), value: "notifications" },
 			]
 			onActivated: liveGroup.setField('liveType', currentValue)
 		}
@@ -141,6 +143,13 @@ TileEditorGroupBox {
 			visible: appObj.liveType === "media"
 			text: i18n("Only show this app's player")
 			onToggled: liveGroup.setField('liveMediaAppOnly', checked)
+		}
+
+		PlasmaComponents3.CheckBox {
+			id: notificationPreviewCheckBox
+			visible: appObj.liveType === "notifications"
+			text: i18n("Show the latest notifications' text (2×2 and larger)")
+			onToggled: liveGroup.setField('liveNotificationPreview', checked)
 		}
 
 		PlasmaComponents3.CheckBox {

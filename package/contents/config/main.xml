@@ -118,6 +118,10 @@
 			<!-- enum: left, center, right -->
 			<default>left</default>
 		</entry>
+		<entry name="groupLabelVerticalAlignment" type="string">
+			<!-- enum: top, center, bottom -->
+			<default>center</default>
+		</entry>
 		<entry name="dynamicTilePusher" type="bool">
 			<default>true</default>
 		</entry>

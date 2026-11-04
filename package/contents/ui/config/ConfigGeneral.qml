@@ -223,6 +223,15 @@ LibConfig.FormKCM {
 			{ value: "right", text: i18n("Right") },
 		]
 	}
+	LibConfig.ComboBox {
+		configKey: "groupLabelVerticalAlignment"
+		Kirigami.FormData.label: i18n("Group Text Vertical Alignment")
+		model: [
+			{ value: "top", text: i18n("Top") },
+			{ value: "center", text: i18n("Center") },
+			{ value: "bottom", text: i18n("Bottom") },
+		]
+	}
 	LibConfig.CheckBox {
 		text: i18n("Use dynamic pusher")
 		configKey: 'dynamicTilePusher'
