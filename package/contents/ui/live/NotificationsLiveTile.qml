@@ -1,5 +1,4 @@
 import QtQuick
-import QtQml
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents3
 import org.kde.notificationmanager as NotificationManager
@@ -66,7 +65,12 @@ Item {
 			console.warn(logPrefix, "Could not work out an app ID or name from tile URL", "\"" + (appObj.favoriteId || "") + "\"", "or app URL", "\"" + (appObj.appUrl || "") + "\"", "- notification count disabled for this tile.")
 		}
 	}
-	Component.onCompleted: if (!canMatch) canMatchChanged()
+	Component.onCompleted: {
+		if (!canMatch) {
+			canMatchChanged()
+		}
+		scheduleRecount()
+	}
 
 	function normalizeEntry(s) {
 		return (s || "").toString().toLowerCase().replace(/\.desktop$/, "")
@@ -99,57 +103,10 @@ Item {
 	}
 	onBlacklistedChanged: logger.debug(logPrefix, "badge blacklisted in Notification settings:", blacklisted)
 
-	// IMPORTANT: creating a Notifications model makes the library register
-	// as the desktop's notification server (org.freedesktop.Notifications)
-	// if nobody has yet. That's the system tray Notifications widget's job:
-	// if we did it, a user without that widget (or with another daemon)
-	// would silently lose their notifications. So the model only exists
-	// once the server is already running in this process.
-	Loader {
-		id: modelLoader
-		active: notificationsLiveTile.serverValid && notificationsLiveTile.canMatch
-		// Unfiltered (the library can only filter on an exact desktop
-		// entry); matching happens per row below.
-		sourceComponent: NotificationManager.Notifications {
-			showNotifications: true
-			showJobs: false
-			showExpired: true // popups that timed out are still in the history
-			showDismissed: false
-			showAddedDuringInhibition: true
-			groupMode: NotificationManager.Notifications.GroupDisabled
-			sortMode: NotificationManager.Notifications.SortByDate
-			sortOrder: Qt.DescendingOrder
-			urgencies: NotificationManager.Notifications.LowUrgency
-				| NotificationManager.Notifications.NormalUrgency
-				| NotificationManager.Notifications.CriticalUrgency
-		}
-		onStatusChanged: {
-			if (status === Loader.Error) {
-				console.warn(notificationsLiveTile.logPrefix, "Failed to create the Notifications model; the notificationmanager API may have changed. Notification count disabled.")
-			}
-		}
-	}
-	readonly property var notificationsModel: modelLoader.status === Loader.Ready ? modelLoader.item : null
-
-	// One lightweight object per notification in the history, so the row's
-	// identity and text can be read and re-checked when it changes.
-	Instantiator {
-		id: rows
-		model: notificationsLiveTile.notificationsModel
-		delegate: QtObject {
-			readonly property string desktopEntry: model.desktopEntry || ""
-			readonly property string applicationName: model.applicationName || ""
-			readonly property string notifyRcName: typeof model.notifyRcName === "string" ? model.notifyRcName : ""
-			readonly property string summary: model.summary || ""
-			readonly property string body: model.body || ""
-			onDesktopEntryChanged: notificationsLiveTile.scheduleRecount()
-			onApplicationNameChanged: notificationsLiveTile.scheduleRecount()
-			onSummaryChanged: notificationsLiveTile.scheduleRecount()
-			onBodyChanged: notificationsLiveTile.scheduleRecount()
-		}
-		onObjectAdded: notificationsLiveTile.scheduleRecount()
-		onObjectRemoved: notificationsLiveTile.scheduleRecount()
-	}
+	// The shared history (see NotificationHistory.qml), owned by main.qml because
+	// this tile can be destroyed and rebuilt at any time.
+	readonly property var historyRows: notificationHistoryLoader.item ? notificationHistoryLoader.item.rows : []
+	onHistoryRowsChanged: scheduleRecount()
 	onAppNameChanged: scheduleRecount()
 
 	property int count: 0
@@ -164,11 +121,8 @@ Item {
 	function recount() {
 		var matched = 0
 		var items = []
-		for (var i = 0; i < rows.count; i++) {
-			var n = rows.objectAt(i)
-			if (!n) {
-				continue
-			}
+		for (var i = 0; i < historyRows.length; i++) {
+			var n = historyRows[i]
 			var isMatch = matches(n)
 			// Log how each app identifies itself (never the notification
 			// text), to diagnose apps that don't get counted.
@@ -184,39 +138,10 @@ Item {
 				}
 			}
 		}
-		if (rows.count !== lastLoggedRowCount) {
-			lastLoggedRowCount = rows.count
-			logger.debug(logPrefix, "notification history now has", rows.count, "notification(s),", matched, "counted for this tile")
-		}
 		count = matched
 		previewItems = items
 	}
-	property int lastLoggedRowCount: -1
 	onCountChanged: logger.debug(logPrefix, "count:", count)
-
-	// Notification server health
-	// The server runs inside plasmashell once the Notifications widget (system
-	// tray) starts it. Without it the history is empty and the count stays 0.
-	readonly property bool serverValid: NotificationManager.Server.valid
-	onServerValidChanged: logger.debug(logPrefix, "notification server valid:", serverValid)
-	function serverOwnerText() {
-		var owner = NotificationManager.Server.currentOwner
-		var text = owner ? [owner.vendor, owner.name, owner.version].filter(function(v) { return !!v }).join(" ") : ""
-		return text || "<none>"
-	}
-	Timer {
-		// Give the system tray time to start the server before complaining.
-		interval: 10000
-		running: !notificationsLiveTile.serverValid
-		onTriggered: {
-			var process = Qt.application.name || "<unknown>"
-			if (process !== "plasmashell") {
-				console.warn(notificationsLiveTile.logPrefix, "Running in", "\"" + process + "\",", "not plasmashell. Plasma's notification history only exists inside plasmashell (current owner of the notification service:", notificationsLiveTile.serverOwnerText() + "),", "so the notification count stays at 0 here. Test this tile in the real panel instead.")
-			} else {
-				console.warn(notificationsLiveTile.logPrefix, "Plasma's notification server is not running in plasmashell (current owner of the notification service:", notificationsLiveTile.serverOwnerText() + ").", "Is the Notifications widget in the system tray? This tile won't start the server itself; counts stay at 0 until it is running.")
-			}
-		}
-	}
 
 	// View
 	readonly property bool previewShown: appObj.liveNotificationPreview && appObj.tileW >= 2 && appObj.tileH >= 2

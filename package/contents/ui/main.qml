@@ -59,6 +59,19 @@ PlasmoidItem {
 		// showDebug: true
 	}
 
+	// Shared by every notification live tile. Lives here because tiles get
+	// rebuilt; see live/NotificationHistory.qml. Failing to load (e.g. the
+	// library's API changed) only disables the notification count.
+	Loader {
+		id: notificationHistoryLoader
+		source: "live/NotificationHistory.qml"
+		onStatusChanged: {
+			if (status === Loader.Error) {
+				console.warn("[tiledmenu] Failed to load the notification history. Notification counts are disabled.")
+			}
+		}
+	}
+
 	SearchModel {
 		id: search
 		Component.onCompleted: {
