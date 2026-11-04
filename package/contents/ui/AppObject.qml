@@ -47,7 +47,7 @@ QtObject {
 	readonly property bool isLive: !isGroup && liveSource !== ""
 	readonly property bool liveCycle: tile && typeof tile.liveCycle !== "undefined" ? tile.liveCycle : true
 	readonly property string liveFormat: tile && tile.liveFormat || ""
-	readonly property string liveCommand: tile && tile.liveCommand || ""
+	readonly property string liveCommand: tile && typeof tile.liveCommand === "string" ? tile.liveCommand : ""
 	readonly property int liveInterval: tile && tile.liveInterval > 0 ? tile.liveInterval : (liveType === "slideshow" ? 10 : 60)
 	readonly property string liveFolder: tile && tile.liveFolder || ""
 	readonly property bool liveShuffle: tile && tile.liveShuffle || false

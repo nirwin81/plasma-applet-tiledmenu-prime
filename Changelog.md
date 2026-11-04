@@ -1,7 +1,7 @@
 ## Unreleased
 
 * Add Live Tiles: a tile can show a clock, the output of a shell command, or a slideshow of a folder of images (optionally including subfolders), optionally alternating with its normal face (Edit Tile > Live Tile)
-* Importing a layout that contains new live tile commands now asks before saving (Accept / Remove commands / Cancel); commands using `rm` are always removed
+* Importing a layout that contains new live tile commands now asks before saving (Remove commands / Cancel / Accept); dangerous commands (e.g. `rm`, `dd`, `sudo`, `curl x | sh`) are always removed, and layouts with a malformed tile list are rejected
 
 ## v1.1.0 - November 03 2026
 
