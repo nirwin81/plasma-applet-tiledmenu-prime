@@ -1,14 +1,127 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs as QtDialogs
 import QtQuick.Layouts
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.plasma5support as P5Support
 import org.kde.kirigami as Kirigami
 
 import ".." as TiledMenu
+import "../lib" as Lib
 import "../lib/LiveTileSecurity.js" as LiveTileSecurity
 
 ColumnLayout {
 	id: page
+
+	// A wrong file is easy to pick with no filetype filter. Reading stops here so
+	// that a huge one can't fill memory; the cut-off text then fails to parse.
+	readonly property int maxLayoutFileBytes: 10 * 1024 * 1024
+	// One shell command can't be longer than 128 KiB, and a character takes at
+	// most 4 bytes once quoted, so longer layouts are written in several commands.
+	readonly property int writeChunkLength: 20000
+
+	Lib.XdgUserDir {
+		id: xdgUserDir
+	}
+
+	// QML can't write local files, or read them without an environment variable
+	// set, so file access goes through the shell.
+	P5Support.DataSource {
+		id: fileShell
+		engine: "executable"
+		connectedSources: []
+		property var callbacks: ({})
+
+		function run(command, callback) {
+			callbacks[command] = callback
+			connectSource(command)
+		}
+
+		onNewData: function(sourceName, data) {
+			var callback = callbacks[sourceName]
+			delete callbacks[sourceName]
+			disconnectSource(sourceName)
+			if (callback) {
+				callback(data)
+			}
+		}
+	}
+
+	function shellQuote(text) {
+		return "'" + text.replace(/'/g, "'\\''") + "'"
+	}
+
+	// Empty for anything that isn't a local file.
+	function localPath(fileUrl) {
+		var url = fileUrl.toString()
+		return url.startsWith("file://") ? decodeURIComponent(url.substring("file://".length)) : ""
+	}
+
+	function showFileError(title, message) {
+		fileErrorDialog.title = title
+		fileErrorDialog.subtitle = message
+		fileErrorDialog.open()
+	}
+
+	function saveLayoutFile(fileUrl) {
+		var path = localPath(fileUrl)
+		if (!path) {
+			showFileError(i18n("The layout couldn't be saved"), i18n("Layouts can only be saved to local files."))
+			return
+		}
+		// The layout in use, not the text area, which could hold a half-typed edit.
+		writeLayoutChunk(path, exportData.parseValue(exportData.defaultValue) + "\n", 0)
+	}
+
+	function writeLayoutChunk(path, text, start) {
+		var end = Math.min(start + writeChunkLength, text.length)
+		// Don't split a surrogate pair across two commands.
+		var lastChar = text.charCodeAt(end - 1)
+		if (end < text.length && lastChar >= 0xD800 && lastChar <= 0xDBFF) {
+			end--
+		}
+		var redirect = start === 0 ? " > " : " >> "
+		var command = "printf %s " + shellQuote(text.substring(start, end)) + redirect + shellQuote(path)
+		fileShell.run(command, function(data) {
+			if (data["exit code"] !== 0) {
+				showFileError(i18n("The layout couldn't be saved"), (data["stderr"] || "").trim() || path)
+			} else if (end < text.length) {
+				writeLayoutChunk(path, text, end)
+			}
+		})
+	}
+
+	function importLayoutFile(fileUrl) {
+		var path = localPath(fileUrl)
+		if (!path) {
+			showFileError(i18n("This file can't be imported"), i18n("Layouts can only be imported from local files."))
+			return
+		}
+		var command = "head -c " + maxLayoutFileBytes + " -- " + shellQuote(path)
+		fileShell.run(command, function(data) {
+			if (data["exit code"] !== 0) {
+				showFileError(i18n("This file can't be imported"), (data["stderr"] || "").trim() || path)
+			} else {
+				importLayoutText(data["stdout"] || "", path)
+			}
+		})
+	}
+
+	function importLayoutText(text, path) {
+		var newValue = null
+		try {
+			newValue = JSON.parse(text)
+		} catch (e) {
+			// Handled below, the same as any other JSON that isn't a layout.
+		}
+		if (!newValue || typeof newValue !== "object" || Array.isArray(newValue)) {
+			showFileError(i18n("This file can't be imported"), i18n("%1 doesn't contain a layout. Nothing was saved.", path))
+			return
+		}
+		// Changing the text sends the layout through exportData.serialize(), which
+		// runs the same checks as a layout pasted into the text area.
+		exportData.setValue(newValue)
+	}
 
 	ScrollView {
 		Layout.fillWidth: true
@@ -130,6 +243,56 @@ ColumnLayout {
 		}
 	}
 
+	RowLayout {
+		Button {
+			text: i18n("Save Layout As...")
+			icon.name: "document-save-as"
+			onClicked: fileDialogLoader.openDialog(true)
+		}
+		Button {
+			text: i18n("Import Layout")
+			icon.name: "document-import"
+			onClicked: fileDialogLoader.openDialog(false)
+		}
+	}
+
+	// Creates a new dialog each time, so that it always starts in the home directory.
+	Loader {
+		id: fileDialogLoader
+		visible: false // Takes no space in the layout.
+		active: false
+		property bool saving: false
+
+		function openDialog(forSaving) {
+			saving = forSaving
+			active = true
+		}
+
+		sourceComponent: QtDialogs.FileDialog {
+			visible: false
+			modality: Qt.WindowModal
+			title: fileDialogLoader.saving ? i18n("Save Layout As") : i18n("Import Layout")
+			fileMode: fileDialogLoader.saving ? QtDialogs.FileDialog.SaveFile : QtDialogs.FileDialog.OpenFile
+			currentFolder: xdgUserDir.home
+			onAccepted: {
+				var file = selectedFile
+				var saving = fileDialogLoader.saving
+				fileDialogLoader.active = false
+				if (saving) {
+					page.saveLayoutFile(file)
+				} else {
+					page.importLayoutFile(file)
+				}
+			}
+			onRejected: fileDialogLoader.active = false
+			Component.onCompleted: visible = true
+		}
+	}
+
+	Kirigami.PromptDialog {
+		id: fileErrorDialog
+		standardButtons: Kirigami.Dialog.Ok
+	}
 
 	Kirigami.PromptDialog {
 		id: invalidLayoutDialog

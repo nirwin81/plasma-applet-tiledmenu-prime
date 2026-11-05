@@ -1,7 +1,10 @@
-## Unreleased
+## v1.2.0 - November 05 2026
 
-* Add Live Tiles: a tile can show a clock, the output of a shell command, or a slideshow of a folder of images (optionally including subfolders), optionally alternating with its normal face (Edit Tile > Live Tile)
+* Add Live Tiles: a tile can show a clock, the output of a shell command, a slideshow of a folder of images (optionally including subfolders), details of a media player, or an applications notifications. Optionally alternating with its normal face (Edit Tile > Live Tile)
 * Importing a layout that contains new live tile commands now asks before saving (Remove commands / Cancel / Accept); dangerous commands (e.g. `rm`, `dd`, `sudo`, `curl x | sh`) are always removed, and layouts with a malformed tile list are rejected
+* Add "Save Layout As..." and "Import Layout" buttons to the Import/Export Layout page, to save a layout to a file and load one from a file
+* Add tile corner rounding (user customizable)
+* Allow user to set vertical alignment of group text
 
 ## v1.1.0 - November 03 2026
 
