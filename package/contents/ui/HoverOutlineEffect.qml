@@ -13,6 +13,7 @@ Item {
 	property int hoverRadius: 40
 	property int pressedRadius: hoverRadius
 	property bool useOutlineMask: true
+	property real radius: 0
 
 	property var mouseArea
 	property bool hovered: mouseArea ? mouseArea.containsMouse : false
@@ -41,6 +42,7 @@ Item {
 		id: hoverSolidFill
 		anchors.fill: parent
 		anchors.margins: hoverOutlineSize
+		radius: Math.max(0, hoverOutlineEffect.radius - hoverOutlineSize)
 		color: fillColor
 	}
 
@@ -48,6 +50,7 @@ Item {
 		id: hoverOutline
 		visible: !hoverOutlineEffect.useOutlineMask
 		anchors.fill: parent
+		radius: hoverOutlineEffect.radius
 		// color: "transparent"
 		color: hoverOutlineEffect.pressed ? pressedFillColor : fillColor
 		border.color: borderColor

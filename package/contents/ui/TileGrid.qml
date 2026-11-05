@@ -83,8 +83,7 @@ DropArea {
 		for (var index = 0; index < pushedTiles.length; ++index) {
 			if (pushedTiles[index]) {
 				console.log('Resetting pushedFrom values 1')
-				pushedTiles[index].pushedFromX = -1
-				pushedTiles[index].pushedFromY = -1
+				clearPushedFrom(pushedTiles[index])
 			}
 		}
 		pushedTiles = []
@@ -122,10 +121,6 @@ DropArea {
 		dropHoverX = draggedItem.x
 		dropHoverY = draggedItem.y
 		isDragging = true
-		for (var i = 0; i < tileModel.length; ++i) {
-			if (tileModel[i].pushedFromX === undefined) tileModel[i].pushedFromX = -1
-			if (tileModel[i].pushedFromY === undefined) tileModel[i].pushedFromY = -1
-		}
 		draggedItemOriginalGroup = null
 		for (var i = 0; i < tileModel.length; ++i) {
 			var t = tileModel[i]
@@ -296,12 +291,17 @@ DropArea {
 		}
 		tile.x = cellX
 		tile.y = cellY
-		tile.pushedFromX = -1
-		tile.pushedFromY = -1
+		clearPushedFrom(tile)
 		tileGrid.tileModelChanged()
 	}
 
 	property var pushedTiles: new Array(32)
+
+	// A tile only has pushedFromX/Y while it's displaced by the current drag.
+	function clearPushedFrom(tile) {
+		delete tile.pushedFromX
+		delete tile.pushedFromY
+	}
 
 	function moveTileAnimated(tile, cellX, cellY) {
 		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) {
@@ -325,8 +325,8 @@ DropArea {
 		if (isNaN(cellX) || isNaN(cellY) || cellX === null || cellY === null) {
 			return
 		}
-		if (tile.pushedFromX === -1) tile.pushedFromX = tile.x
-		if (tile.pushedFromY === -1) tile.pushedFromY = tile.y
+		if (tile.pushedFromX === undefined) tile.pushedFromX = tile.x
+		if (tile.pushedFromY === undefined) tile.pushedFromY = tile.y
 		if (tile.tileType == "group") {
 			moveGroupContentsAnimated(tile, cellX - tile.x, cellY - tile.y)
 		}
@@ -345,7 +345,7 @@ DropArea {
 		if (!tile) {
 			return
 		}
-		if (tile.pushedFromX == -1 || tile.pushedFromY == -1) {
+		if (tile.pushedFromX === undefined || tile.pushedFromY === undefined) {
 			return
 		}
 		var groupToIgnore = tile.tileType === 'group' ? tile : null
@@ -357,8 +357,7 @@ DropArea {
 
 		if (!hits(tile.pushedFromX, tile.pushedFromY, tile.w, snapCheckH, tile, groupToIgnore, null)) {
 			moveTileAnimated(tile, tile.pushedFromX, tile.pushedFromY)
-			tile.pushedFromX = -1
-			tile.pushedFromY = -1
+			clearPushedFrom(tile)
 			pushedTiles.splice(pushedTiles.indexOf(tile), 1)
 			updateSize()
 			return
@@ -396,14 +395,8 @@ DropArea {
 		// Snap it back to the appropriate place
 		if (xPosToUse !== -1 && yPosToUse !== -1) {
 			moveTileAnimated(tile, xPosToUse, yPosToUse)
-			onExited
 		}
 		updateSize()
-	}
-
-	function applyTilePush(tile) {
-		pushedFromX = -1
-		pushedFromY = -1
 	}
 
 	// QQuickDropEvent

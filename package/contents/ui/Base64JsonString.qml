@@ -11,6 +11,13 @@ QtObject {
 	property bool loadOnConfigChange: true
 	signal loaded()
 
+	// Drag state TileGrid keeps on tiles. It only means something during a drag,
+	// so it's dropped when writing, and when reading layouts saved by older versions.
+	readonly property var transientKeys: ['pushedFromX', 'pushedFromY']
+	function omitTransientKeys(key, val) {
+		return transientKeys.indexOf(key) >= 0 ? undefined : val
+	}
+
 	Component.onCompleted: {
 		load()
 	}
@@ -33,11 +40,13 @@ QtObject {
 		}
 		var val = Qt.atob(configValue) // decode base64
 		val = JSON.parse(val)
+		// Round trip, as Qt's JSON.parse ignores its reviver argument.
+		val = JSON.parse(JSON.stringify(val, omitTransientKeys))
 		return val
 	}
 
 	function setBase64Json(key, data) {
-		var val = JSON.stringify(data)
+		var val = JSON.stringify(data, omitTransientKeys)
 		val = Qt.btoa(val)
 		writing = true
 		plasmoid.configuration[key] = val

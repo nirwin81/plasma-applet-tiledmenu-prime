@@ -1,4 +1,5 @@
 import QtQuick
+import QtCore
 
 QtObject {
 	id: appObj
@@ -27,7 +28,49 @@ QtObject {
 	readonly property string backgroundImage: tile && typeof tile.backgroundImage !== "undefined" ? tile.backgroundImage : ""
 	readonly property bool backgroundGradient: tile && typeof tile.gradient !== "undefined" ? tile.gradient : config.defaultTileGradient
 
-	readonly property int tileX: tile && typeof tile.x !== "undefined" ? tile.x : 0
+	// Live tiles: a tile with a known `liveType` shows a dynamic face
+	// (live/<Type>LiveTile.qml) on top of / alternating with its normal face.
+	// Fields are kept flat on the tile (not a nested object) so the same
+	// tileChanged() re-emit used for every other field keeps bindings fresh.
+	readonly property var liveTileSources: ({
+		"clock": "live/ClockLiveTile.qml",
+		"command": "live/CommandLiveTile.qml",
+		"slideshow": "live/SlideshowLiveTile.qml",
+		"media": "live/MediaLiveTile.qml",
+		"notifications": "live/NotificationsLiveTile.qml",
+	})
+	// Types whose content should fill the tile edge to edge (no padding,
+	// label drawn over a scrim).
+	readonly property bool liveFullBleed: liveType === "slideshow"
+	readonly property string liveType: tile && tile.liveType || ""
+	readonly property string liveSource: liveTileSources[liveType] || ""
+	readonly property bool isLive: !isGroup && liveSource !== ""
+	readonly property bool liveCycle: tile && typeof tile.liveCycle !== "undefined" ? tile.liveCycle : true
+	readonly property string liveFormat: tile && tile.liveFormat || ""
+	readonly property string liveCommand: tile && typeof tile.liveCommand === "string" ? tile.liveCommand : ""
+	readonly property int liveInterval: tile && tile.liveInterval > 0 ? tile.liveInterval : (liveType === "slideshow" ? 10 : 60)
+	readonly property string liveFolder: tile && tile.liveFolder || ""
+	readonly property bool liveShuffle: tile && tile.liveShuffle || false
+	readonly property bool liveRecursive: tile && tile.liveRecursive || false
+	readonly property bool liveMediaAppOnly: tile && tile.liveMediaAppOnly || false
+	readonly property bool liveNotificationPreview: tile && tile.liveNotificationPreview || false
+	// liveFolder as a file:// URL: accepts a plain path, "~/..." or a URL;
+	// empty means the user's Pictures folder.
+	readonly property string liveFolderUrl: {
+		var path = liveFolder
+		if (!path) {
+			return StandardPaths.writableLocation(StandardPaths.PicturesLocation).toString()
+		}
+		if (path.indexOf("file://") === 0) {
+			return path
+		}
+		if (path === "~" || path.indexOf("~/") === 0) {
+			return StandardPaths.writableLocation(StandardPaths.HomeLocation).toString() + path.substring(1)
+		}
+		return "file://" + path
+	}
+
+	readonly property int tileX:tile && typeof tile.x !== "undefined" ? tile.x : 0
 	readonly property int tileY: tile && typeof tile.y !== "undefined" ? tile.y : 0
 	readonly property int tileW: tile && typeof tile.w !== "undefined" ? tile.w : defaultTileW
 	readonly property int tileH: tile && typeof tile.h !== "undefined" ? tile.h : defaultTileH

@@ -25,6 +25,16 @@ ColumnLayout {
 		delete appObj.tile.icon
 		delete appObj.tile.backgroundColor
 		delete appObj.tile.backgroundImage
+		delete appObj.tile.liveType
+		delete appObj.tile.liveCycle
+		delete appObj.tile.liveFormat
+		delete appObj.tile.liveCommand
+		delete appObj.tile.liveInterval
+		delete appObj.tile.liveFolder
+		delete appObj.tile.liveShuffle
+		delete appObj.tile.liveRecursive
+		delete appObj.tile.liveMediaAppOnly
+		delete appObj.tile.liveNotificationPreview
 		appObj.tileChanged()
 		tileGrid.tileModelChanged()
 	}
@@ -108,6 +118,9 @@ ColumnLayout {
 					dialog.title = i18n("Choose an image")
 					dialog.nameFilters.unshift(i18n("Image Files (*.png *.jpg *.jpeg *.bmp *.svg *.svgz)"))
 				}
+			}
+
+			TileEditorLiveGroup {
 			}
 
 			TileEditorPresetTiles {

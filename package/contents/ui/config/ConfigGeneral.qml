@@ -162,6 +162,14 @@ LibConfig.FormKCM {
 		minimumValue: 0
 		maximumValue: config.cellBoxUnits/2
 	}
+	LibConfig.SpinBox {
+		configKey: 'tileCornerRadius'
+		Kirigami.FormData.label: i18n("Tile Corner Rounding")
+		suffix: i18n("px")
+		minimumValue: 0
+		// Half a 1x1 tile: at this value 1x1 tiles are circles.
+		maximumValue: config.tileCornerRadiusMaxUnits
+	}
 	LibConfig.CheckBox {
 		text: i18n("Use smaller tile icons")
 		configKey: 'smallTileIcons'
@@ -213,6 +221,15 @@ LibConfig.FormKCM {
 			{ value: "left", text: i18n("Left") },
 			{ value: "center", text: i18n("Center") },
 			{ value: "right", text: i18n("Right") },
+		]
+	}
+	LibConfig.ComboBox {
+		configKey: "groupLabelVerticalAlignment"
+		Kirigami.FormData.label: i18n("Group Text Vertical Alignment")
+		model: [
+			{ value: "top", text: i18n("Top") },
+			{ value: "center", text: i18n("Center") },
+			{ value: "bottom", text: i18n("Bottom") },
 		]
 	}
 	LibConfig.CheckBox {

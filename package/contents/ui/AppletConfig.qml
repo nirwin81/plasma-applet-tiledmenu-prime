@@ -48,6 +48,8 @@ Item {
 	readonly property real cellMargin: cellMarginUnits * tileScale * scaleFactor
 	readonly property real cellPushedMargin: cellMargin * 2
 	readonly property int cellBoxSize: cellMargin + cellSize + cellMargin
+	readonly property int tileCornerRadiusUnits: plasmoid.configuration.tileCornerRadius
+	readonly property int tileCornerRadiusMaxUnits: Math.floor(cellSizeUnits * tileScale / 2)
 	readonly property bool smallTileIcons: plasmoid.configuration.smallTileIcons
 	readonly property int tileGridWidth: plasmoid.configuration.favGridCols * cellBoxSize
 
@@ -133,6 +135,16 @@ Item {
 			return Text.AlignRight
 		} else { // left
 			return Text.AlignLeft
+		}
+	}
+	readonly property int groupLabelVerticalAlignment: {
+		var val = plasmoid.configuration.groupLabelVerticalAlignment
+		if (val === 'top') {
+			return Text.AlignTop
+		} else if (val === 'bottom') {
+			return Text.AlignBottom
+		} else { // center
+			return Text.AlignVCenter
 		}
 	}
 	readonly property bool dynamicTilePusher: {
