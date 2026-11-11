@@ -312,12 +312,19 @@ DropArea {
 			return
 		}
 
+		// Collect members before moving any of them: membership is derived from
+		// positions, so moving members one at a time can make tiles below the
+		// group look like members (and get dragged along) mid-loop.
+		var members = []
 		for (var i = 0; i < tileModel.length; i++) {
 			var t = tileModel[i]
 			if (t === groupTile || t === draggedItem) continue
 			if (draggedGroupMembers.indexOf(t) >= 0) continue
-			if (!isTileInGroup(groupTile, t)) continue
-			var item = tileModelRepeater.itemAt(i)
+			if (isTileInGroup(groupTile, t)) members.push(i)
+		}
+		for (var m = 0; m < members.length; m++) {
+			var t = tileModel[members[m]]
+			var item = tileModelRepeater.itemAt(members[m])
 			if (item) {
 				item.targetX = (t.x + deltaX) * cellBoxSize
 				item.targetY = (t.y + deltaY) * cellBoxSize
@@ -331,7 +338,7 @@ DropArea {
 	// Section 5: Push Tracking
 	// ============================================================
 
-	property var pushedItems: []  // Array of { tile, origX, origY }
+	property var pushedItems: []  // Array of { tile, origX, origY, pusher }
 
 	function getPushedEntry(tile) {
 		for (var i = 0; i < pushedItems.length; i++) {
@@ -340,10 +347,12 @@ DropArea {
 		return null
 	}
 
-	function recordPush(tile) {
-		// Save tile's current position as its pre-push origin (only on first push)
+	function recordPush(tile, pusher) {
+		// Save tile's current position as its pre-push origin (only on first push).
+		// `pusher` is set for tiles moved by a cascade: the item whose down-push
+		// dragged them along. Their snapback follows that item (see attemptSnapback).
 		if (!getPushedEntry(tile)) {
-			pushedItems.push({ tile: tile, origX: tile.x, origY: tile.y })
+			pushedItems.push({ tile: tile, origX: tile.x, origY: tile.y, pusher: pusher || null })
 		}
 	}
 
@@ -442,16 +451,17 @@ DropArea {
 			// Down: cascade push everything below the tile's current extent
 			ny += best.steps
 			var fromY = tile.y + effectiveH
-			cascadePushDown(tile.x, tile.x + tile.w - 1, fromY, best.steps, ignoreSet)
+			cascadePushDown(tile.x, tile.x + tile.w - 1, fromY, best.steps, ignoreSet, tile)
 		}
 
 		animateTileTo(tile, nx, ny)
 		return true
 	}
 
-	function cascadePushDown(colX1, colX2, fromY, delta, ignoreSet) {
+	function cascadePushDown(colX1, colX2, fromY, delta, ignoreSet, pusher) {
 		// Push all tiles in columns [colX1..colX2] whose effective bottom is at y >= fromY
 		// down by delta. If a tile is a group member, push the whole group instead.
+		// `pusher` is the item whose down-push caused this cascade.
 		var toMove = []
 
 		for (var i = 0; i < tileModel.length; i++) {
@@ -481,7 +491,7 @@ DropArea {
 		toMove.sort(function(a, b) { return b.y - a.y })
 
 		for (var i = 0; i < toMove.length; i++) {
-			recordPush(toMove[i])
+			recordPush(toMove[i], pusher)
 			animateTileTo(toMove[i], toMove[i].x, toMove[i].y + delta)
 		}
 	}
@@ -579,13 +589,26 @@ DropArea {
 	function attemptSnapback(entry) {
 		// Try to return a pushed tile toward its original position.
 		// Removes entry from pushedItems if fully snapped back.
+		// Returns true if the tile moved.
 		var tile = entry.tile
 		var origX = entry.origX, origY = entry.origY
 
 		if (tile.x === origX && tile.y === origY) {
 			pushedItems.splice(pushedItems.indexOf(entry), 1)
-			return
+			return false
 		}
+
+		// A cascaded tile may only return as far as its pusher has returned, so
+		// the spacing between them is kept. Otherwise it would close the gap
+		// below a still-displaced group and get absorbed into it.
+		if (entry.pusher) {
+			var pusherEntry = getPushedEntry(entry.pusher)
+			if (pusherEntry) {
+				origY += Math.max(0, entry.pusher.y - pusherEntry.origY)
+			}
+			if (tile.x === origX && tile.y === origY) return false
+		}
+		var isFinalTarget = origX === entry.origX && origY === entry.origY
 
 		var effectiveH = tile.tileType === 'group' ? getGroupFullHeight(tile) : tile.h
 		var ignoreSet = buildIgnoreSet(tile)
@@ -604,8 +627,8 @@ DropArea {
 		if (isRectFree(origX, origY, tile.w, effectiveH, ignoreSet)) {
 			if (!forbiddenRect || !rectsOverlap(makeRect(origX, origY, tile.w, effectiveH), forbiddenRect)) {
 				animateTileTo(tile, origX, origY)
-				pushedItems.splice(pushedItems.indexOf(entry), 1)
-				return
+				if (isFinalTarget) pushedItems.splice(pushedItems.indexOf(entry), 1)
+				return true
 			}
 		}
 
@@ -639,16 +662,24 @@ DropArea {
 
 		if (bestX !== tile.x || bestY !== tile.y) {
 			animateTileTo(tile, bestX, bestY)
-			if (bestX === origX && bestY === origY) {
+			if (isFinalTarget && bestX === origX && bestY === origY) {
 				pushedItems.splice(pushedItems.indexOf(entry), 1)
 			}
+			return true
 		}
+		return false
 	}
 
 	function attemptAllSnapbacks() {
-		// Iterate in reverse so removals during attemptSnapback don't skip entries
-		for (var i = pushedItems.length - 1; i >= 0; i--) {
-			if (pushedItems[i]) attemptSnapback(pushedItems[i])
+		// Iterate in reverse so removals during attemptSnapback don't skip entries.
+		// Repeat while anything moves: a pusher returning (processed after the
+		// tiles it cascaded) frees those tiles to follow on the next pass.
+		for (var pass = 0; pass < 8; pass++) {
+			var moved = false
+			for (var i = pushedItems.length - 1; i >= 0; i--) {
+				if (pushedItems[i] && attemptSnapback(pushedItems[i])) moved = true
+			}
+			if (!moved) break
 		}
 	}
 
@@ -680,12 +711,20 @@ DropArea {
 		if (draggedItem.tileType === 'group') {
 			var contentRect = getGroupContentRect(draggedItem)
 			draggedGroupContentHeight = contentRect.h
+			// Build the list locally and assign it once: getGroupContentRect skips
+			// tiles already in draggedGroupMembers, so pushing into it while
+			// iterating shrinks the group's content area and drops later members.
+			var members = []
 			for (var i = 0; i < tileModel.length; i++) {
 				if (i === draggedIndex) continue
-				if (isTileInGroup(draggedItem, tileModel[i])) {
-					draggedGroupMembers.push(tileModel[i])
+				var t = tileModel[i]
+				if (t.x < contentRect.x1 || t.x > contentRect.x2) continue
+				if (t.tileType === 'group') continue
+				if (contentRect.h > 0 && t.y >= contentRect.y1 && t.y <= contentRect.y2) {
+					members.push(t)
 				}
 			}
+			draggedGroupMembers = members
 		}
 
 		rebuildHitbox()
@@ -801,23 +840,21 @@ DropArea {
 		if (tile.tileType === 'group') {
 			var deltaX = cellX - tile.x
 			var deltaY = cellY - tile.y
-			// Move all group members (use captured draggedGroupMembers for dragged group)
+			// Move all group members (use captured draggedGroupMembers for dragged group).
+			// Collect them before moving any, since membership is derived from positions.
 			var members = (tile === draggedItem && draggedGroupMembers.length > 0)
 				? draggedGroupMembers
 				: null
 			if (!members) {
+				members = []
 				for (var i = 0; i < tileModel.length; i++) {
 					var t = tileModel[i]
-					if (t !== tile && isTileInGroup(tile, t)) {
-						t.x += deltaX
-						t.y += deltaY
-					}
+					if (t !== tile && isTileInGroup(tile, t)) members.push(t)
 				}
-			} else {
-				for (var i = 0; i < members.length; i++) {
-					members[i].x += deltaX
-					members[i].y += deltaY
-				}
+			}
+			for (var i = 0; i < members.length; i++) {
+				members[i].x += deltaX
+				members[i].y += deltaY
 			}
 		}
 		tile.x = cellX
