@@ -15,8 +15,6 @@ LibConfig.TextArea {
 	property alias jsonKey: base64JsonString.configKey
 	property alias defaultValue: base64JsonString.defaultValue
 
-	property alias enabled: textArea.enabled
-
 	readonly property var configValue: configKey ? plasmoid.configuration[configKey] : ""
 	onConfigValueChanged: deserialize()
 	readonly property var value: base64JsonString.value
