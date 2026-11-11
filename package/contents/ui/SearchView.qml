@@ -38,13 +38,27 @@ Item {
 
 	property bool searchOnTop: false
 
+	// Sidebar clicks store a separate key. defaultAppListView stays the
+	// settings "Default View" and is only used when remembering is off.
+	function rememberAppListView(viewName) {
+		if (!plasmoid.configuration.rememberLastAppListView) {
+			return
+		}
+		if (plasmoid.configuration.lastAppListView !== viewName) {
+			plasmoid.configuration.lastAppListView = viewName
+		}
+	}
+
 	function showDefaultView() {
 		var defView = plasmoid.configuration.defaultAppListView
+		if (plasmoid.configuration.rememberLastAppListView && plasmoid.configuration.lastAppListView) {
+			defView = plasmoid.configuration.lastAppListView
+		}
 		if (defView == 'Alphabetical') {
-			appsView.showAppsAlphabetically()
+			appsView.showAppsAlphabetically(false)
 			config.showSearch = true
 		} else if (defView == 'Categories') {
-			appsView.showAppsCategorically()
+			appsView.showAppsCategorically(false)
 			config.showSearch = true
 		} else if (defView == 'JumpToLetter') {
 			jumpToLetterView.showLetters()
@@ -53,16 +67,19 @@ Item {
 			jumpToLetterView.showCategories()
 			config.showSearch = true
 		} else if (defView == 'TilesOnly') {
-			searchView.showTilesOnly()
+			searchView.showTilesOnly(false)
 		}
 	}
 
-	function showTilesOnly() {
+	function showTilesOnly(remember) {
 		if (!showingAppList) {
 			// appsView.show(stackView.noTransition)
 			appsView.show()
 		}
 		config.showSearch = false
+		if (remember !== false) {
+			rememberAppListView('TilesOnly')
+		}
 	}
 
 	function showSearchView() {
@@ -133,14 +150,20 @@ Item {
 			id: appsView
 			visible: false
 
-			function showAppsAlphabetically() {
+			function showAppsAlphabetically(remember) {
 				appsModel.order = "alphabetical"
 				show()
+				if (remember !== false) {
+					searchView.rememberAppListView('Alphabetical')
+				}
 			}
 
-			function showAppsCategorically() {
+			function showAppsCategorically(remember) {
 				appsModel.order = "categories"
 				show()
+				if (remember !== false) {
+					searchView.rememberAppListView('Categories')
+				}
 			}
 
 			function show(animation) {
