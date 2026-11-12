@@ -1,19 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
 	<defs id="defs3051">
 		<style type="text/css" id="current-color-scheme">
-			.ColorScheme-Text {
-				color:#232629;
+			.ColorScheme-Highlight {
+				color:#3daee9;
 			}
 		</style>
 	</defs>
-	<!-- Outline of the largest (2x2) tile, for scale -->
+	<!-- Outline of the largest (2x2) tile, for scale.
+	     Fixed mid-grey so it reads on both light and dark menus,
+	     even when the icon loader doesn't apply the colour scheme. -->
 	<rect x="1.5" y="1.5" width="13" height="13"
-		style="fill:none;stroke:currentColor;stroke-width:1;opacity:0.35"
-		class="ColorScheme-Text"
+		style="fill:#7f8c8d;fill-opacity:0.25;stroke:#7f8c8d;stroke-width:1"
 	/>
-	<!-- Tile footprint -->
+	<!-- Tile footprint, in the highlight (accent) colour -->
 	<rect x="1" y="1" width="14" height="7"
 		style="fill:currentColor"
-		class="ColorScheme-Text"
+		class="ColorScheme-Highlight"
 	/>
 </svg>
