@@ -97,6 +97,16 @@ DropArea {
 	// Section 2: Group Utilities
 	// ============================================================
 
+	// Group membership frozen at drag start: [{ group, members }] (null when not dragging)
+	property var frozenGroups: null
+
+	function frozenMembersOf(groupTile) {
+		for (var i = 0; i < frozenGroups.length; i++) {
+			if (frozenGroups[i].group === groupTile) return frozenGroups[i].members
+		}
+		return []
+	}
+
 	function getGroupContentRect(groupTile) {
 		// Returns the bounding rect of all content tiles below the group header.
 		// Stops at the first empty row within the group's column span, or at another group header.
@@ -107,6 +117,13 @@ DropArea {
 		var colX1 = groupTile.x
 		var colX2 = groupTile.x + groupTile.w - 1
 		var startY = groupTile.y + groupTile.h
+
+		if (frozenGroups) {
+			var fm = frozenMembersOf(groupTile)
+			var fy2 = startY - 1
+			for (var f = 0; f < fm.length; f++) fy2 = Math.max(fy2, fm[f].y + fm[f].h - 1)
+			return { x1: colX1, y1: startY, x2: colX2, y2: fy2, w: colX2 - colX1 + 1, h: fy2 - startY + 1 }
+		}
 
 		var occupiedRows = {}
 		for (var i = 0; i < tileModel.length; i++) {
@@ -154,6 +171,7 @@ DropArea {
 		// Per spec: tile's leftmost column within group's column span,
 		// and tile's top is within the group's connected content rows.
 		if (!groupTile || !tile || tile === groupTile) return false
+		if (frozenGroups) return frozenMembersOf(groupTile).indexOf(tile) >= 0
 		if (tile.x < groupTile.x || tile.x > groupTile.x + groupTile.w - 1) return false
 		var content = getGroupContentRect(groupTile)
 		return content.h > 0 && tile.y >= content.y1 && tile.y <= content.y2
@@ -334,6 +352,9 @@ DropArea {
 			}
 			t.x += deltaX
 			t.y += deltaY
+			// A member pushed within its group keeps its offset when the group moves
+			var e = getPushedEntry(t)
+			if (e) { e.origX += deltaX; e.origY += deltaY }
 		}
 	}
 
@@ -728,32 +749,76 @@ DropArea {
 	// Section 8: Snapback
 	// ============================================================
 
+	function snapTargetOf(entry) {
+		// Where a pushed tile should return to now: its origin, except that a
+		// cascaded tile may only return as far as its pusher has returned, so the
+		// spacing between them is kept. Otherwise it would close the gap below
+		// (or above) a still-displaced group and get absorbed into it.
+		var x = entry.origX, y = entry.origY
+		if (entry.pusher) {
+			var pusherEntry = getPushedEntry(entry.pusher)
+			if (pusherEntry) {
+				var pusherOffset = entry.pusher.y - pusherEntry.origY
+				if (pusherOffset * entry.cascadeDir > 0) y += pusherOffset
+			}
+		}
+		return { x: x, y: y, isFinal: x === entry.origX && y === entry.origY }
+	}
+
+	function snapPieces(tile, ignoreSet, membersToTargets) {
+		// The rects that make up an item, relative to its current position: a tile
+		// is one piece; a group is its header plus each member tile (not its whole
+		// bounding box: the dragged tile may sit in a hole inside the content).
+		// With membersToTargets, members that were pushed within the group are
+		// placed at their own snapback targets, so the group and its displaced
+		// members can return together (neither has to wait for the other).
+		var pieces = [{ tile: tile, rx: 0, ry: 0, entry: null, target: null }]
+		if (tile.tileType !== 'group') return pieces
+		for (var i = 0; i < ignoreSet.length; i++) {
+			var m = ignoreSet[i]
+			if (m === tile) continue
+			var e = membersToTargets ? getPushedEntry(m) : null
+			var tgt = e ? snapTargetOf(e) : null
+			var px = tgt ? tgt.x : m.x, py = tgt ? tgt.y : m.y
+			pieces.push({ tile: m, rx: px - tile.x, ry: py - tile.y, entry: e, target: tgt })
+		}
+		// Members are ignored by the free-space checks, so make sure the
+		// pieces don't land on each other.
+		for (var a = 0; a < pieces.length; a++) {
+			for (var b = a + 1; b < pieces.length; b++) {
+				var A = pieces[a], B = pieces[b]
+				if (rectsOverlap(makeRect(A.rx, A.ry, A.tile.w, A.tile.h), makeRect(B.rx, B.ry, B.tile.w, B.tile.h))) return null
+			}
+		}
+		return pieces
+	}
+
+	function piecesFit(pieces, x, y, ignoreSet, forbiddenRect) {
+		for (var i = 0; i < pieces.length; i++) {
+			var p = pieces[i]
+			var px = x + p.rx, py = y + p.ry
+			if (px < 0 || py < 0 || px + p.tile.w > columns) return false
+			if (!isRectFree(px, py, p.tile.w, p.tile.h, ignoreSet)) return false
+			if (forbiddenRect && rectsOverlap(makeRect(px, py, p.tile.w, p.tile.h), forbiddenRect)) return false
+		}
+		return true
+	}
+
 	function attemptSnapback(entry) {
 		// Try to return a pushed tile toward its original position.
 		// Removes entry from pushedItems if fully snapped back.
 		// Returns true if the tile moved.
 		var tile = entry.tile
-		var origX = entry.origX, origY = entry.origY
 
-		if (tile.x === origX && tile.y === origY) {
+		if (tile.x === entry.origX && tile.y === entry.origY) {
 			pushedItems.splice(pushedItems.indexOf(entry), 1)
 			return false
 		}
 
-		// A cascaded tile may only return as far as its pusher has returned, so
-		// the spacing between them is kept. Otherwise it would close the gap
-		// below (or above) a still-displaced group and get absorbed into it.
-		if (entry.pusher) {
-			var pusherEntry = getPushedEntry(entry.pusher)
-			if (pusherEntry) {
-				var pusherOffset = entry.pusher.y - pusherEntry.origY
-				if (pusherOffset * entry.cascadeDir > 0) origY += pusherOffset
-			}
-			if (tile.x === origX && tile.y === origY) return false
-		}
-		var isFinalTarget = origX === entry.origX && origY === entry.origY
+		var target = snapTargetOf(entry)
+		var origX = target.x, origY = target.y
+		if (tile.x === origX && tile.y === origY) return false
 
-		var effectiveH = tile.tileType === 'group' ? getGroupFullHeight(tile) : tile.h
 		var ignoreSet = buildIgnoreSet(tile)
 
 		// The dragged item's current rect is "forbidden" — snapped tile must not land there
@@ -766,51 +831,66 @@ DropArea {
 			forbiddenRect = makeRect(dropHoverX, dropHoverY, dropWidth, dragH)
 		}
 
-		// Try full snapback first
-		if (isRectFree(origX, origY, tile.w, effectiveH, ignoreSet)) {
-			if (!forbiddenRect || !rectsOverlap(makeRect(origX, origY, tile.w, effectiveH), forbiddenRect)) {
-				animateTileTo(tile, origX, origY)
-				if (isFinalTarget) pushedItems.splice(pushedItems.indexOf(entry), 1)
-				return true
+		// Prefer taking pushed members along to their own targets; fall back to
+		// keeping members where they are relative to the group.
+		var variants = [snapPieces(tile, ignoreSet, true)]
+		if (tile.tileType === 'group') variants.push(snapPieces(tile, ignoreSet, false))
+
+		var bestX = tile.x, bestY = tile.y, bestPieces = null
+		for (var v = 0; v < variants.length && !bestPieces; v++) {
+			var pieces = variants[v]
+			if (!pieces) continue
+
+			// Try full snapback first
+			if (piecesFit(pieces, origX, origY, ignoreSet, forbiddenRect)) {
+				bestX = origX; bestY = origY; bestPieces = pieces
+				break
 			}
-		}
 
-		// Try partial snapback: scan all 4 directions for the reachable position
-		// that is closest (Manhattan distance) to the origin.
-		var bestX = tile.x, bestY = tile.y
-		var bestDist = Math.abs(tile.x - origX) + Math.abs(tile.y - origY)
-
-		var snapDirs = [
-			{ dx:  1, dy:  0 },
-			{ dx: -1, dy:  0 },
-			{ dx:  0, dy: -1 },
-			{ dx:  0, dy:  1 },
-		]
-		for (var d = 0; d < snapDirs.length; d++) {
-			var dx = snapDirs[d].dx, dy = snapDirs[d].dy
-			for (var s = 1; s <= 64; s++) {
-				var testX = tile.x + dx * s
-				var testY = tile.y + dy * s
-				if (testX < 0 || testY < 0 || testX + tile.w > columns) break
-				if (!isRectFree(testX, testY, tile.w, effectiveH, ignoreSet)) break
-				if (forbiddenRect && rectsOverlap(makeRect(testX, testY, tile.w, effectiveH), forbiddenRect)) break
-				var dist = Math.abs(testX - origX) + Math.abs(testY - origY)
-				if (dist < bestDist) {
-					bestDist = dist
-					bestX = testX
-					bestY = testY
+			// Try partial snapback: scan all 4 directions for the reachable position
+			// that is closest (Manhattan distance) to the origin.
+			var bestDist = Math.abs(tile.x - origX) + Math.abs(tile.y - origY)
+			var snapDirs = [
+				{ dx:  1, dy:  0 },
+				{ dx: -1, dy:  0 },
+				{ dx:  0, dy: -1 },
+				{ dx:  0, dy:  1 },
+			]
+			for (var d = 0; d < snapDirs.length; d++) {
+				var dx = snapDirs[d].dx, dy = snapDirs[d].dy
+				for (var s = 1; s <= 64; s++) {
+					var testX = tile.x + dx * s
+					var testY = tile.y + dy * s
+					if (!piecesFit(pieces, testX, testY, ignoreSet, forbiddenRect)) break
+					var dist = Math.abs(testX - origX) + Math.abs(testY - origY)
+					if (dist < bestDist) {
+						bestDist = dist
+						bestX = testX
+						bestY = testY
+						bestPieces = pieces
+					}
 				}
 			}
 		}
 
-		if (bestX !== tile.x || bestY !== tile.y) {
-			animateTileTo(tile, bestX, bestY)
-			if (isFinalTarget && bestX === origX && bestY === origY) {
-				pushedItems.splice(pushedItems.indexOf(entry), 1)
-			}
-			return true
+		if (!bestPieces) return false
+
+		// Moving a group carries its members and shifts their pushed origins
+		// (animateGroupMembersBy); then place pushed members at their targets.
+		var deltaX = bestX - tile.x, deltaY = bestY - tile.y
+		animateTileTo(tile, bestX, bestY)
+		if (bestX === entry.origX && bestY === entry.origY) {
+			pushedItems.splice(pushedItems.indexOf(entry), 1)
 		}
-		return false
+		for (var i = 1; i < bestPieces.length; i++) {
+			var p = bestPieces[i]
+			if (!p.entry) continue
+			animateTileTo(p.tile, bestX + p.rx, bestY + p.ry)
+			if (p.target.isFinal && p.entry.origX === p.tile.x && p.entry.origY === p.tile.y) {
+				pushedItems.splice(pushedItems.indexOf(p.entry), 1)
+			}
+		}
+		return true
 	}
 
 	function attemptAllSnapbacks() {
@@ -869,6 +949,19 @@ DropArea {
 			}
 			draggedGroupMembers = members
 		}
+
+		var frozen = []
+		for (var g = 0; g < tileModel.length; g++) {
+			var grp = tileModel[g]
+			if (g === draggedIndex || grp.tileType !== 'group') continue
+			var mem = []
+			for (var i = 0; i < tileModel.length; i++) {
+				if (i === draggedIndex || draggedGroupMembers.indexOf(tileModel[i]) >= 0) continue
+				if (isTileInGroup(grp, tileModel[i])) mem.push(tileModel[i])
+			}
+			frozen.push({ group: grp, members: mem })
+		}
+		frozenGroups = frozen
 
 		rebuildHitbox()
 	}
@@ -975,6 +1068,7 @@ DropArea {
 			}
 		}
 		draggedGroupMembers = []
+		frozenGroups = null
 		cancelDragHover()
 		isDragging = false
 		draggedIndex = -1
