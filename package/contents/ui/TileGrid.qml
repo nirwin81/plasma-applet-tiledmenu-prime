@@ -61,7 +61,13 @@ DropArea {
 
 	onEntered: drag => { dragTick(drag) }
 	onPositionChanged: drag => { dragTick(drag) }
-	onExited: drag => { cancelDragHover() }
+	onExited: drag => {
+		// An internal drag is ended (and cleaned up) by its TileItem. An external
+		// drag (file from Dolphin etc.) has no such hook: leaving the grid ends it,
+		// so pushed tiles snap back. Re-entering starts a new session.
+		if (draggedItem) cancelDragHover()
+		else resetDrag()
+	}
 	onDropped: drop => {
 		dragTick(drop)
 		if (canDrop) {
@@ -227,7 +233,8 @@ DropArea {
 			maxH = Math.max(maxH, t.h)
 		}
 
-		if (draggedItem) maxR += draggedItem.h  // Extra rows to allow drag-to-bottom
+		var dropItem = draggedItem || addedItem
+		if (dropItem) maxR += dropItem.h  // Extra rows to allow drag-to-bottom
 
 		maxColumn = maxC
 		maxRow = maxR
@@ -926,7 +933,6 @@ DropArea {
 		draggedIndex = index
 		dropHoverX = draggedItem.x
 		dropHoverY = draggedItem.y
-		isDragging = true
 		draggedItemOriginalGroup = getGroupForTile(draggedItem)
 
 		draggedGroupMembers = []
@@ -949,6 +955,17 @@ DropArea {
 			}
 			draggedGroupMembers = members
 		}
+
+		beginDragSession()
+	}
+
+	function beginDragSession() {
+		// Common start of an internal drag (startDrag) or an external one (first
+		// dragTick with an addedItem). isDragging keeps the cell grid from being
+		// rebuilt every time a push changes the row count. Group membership is
+		// frozen for the whole drag: deriving it from positions while tiles are
+		// being pushed lets groups pick up or lose tiles mid-drag.
+		isDragging = true
 
 		var frozen = []
 		for (var g = 0; g < tileModel.length; g++) {
@@ -993,6 +1010,7 @@ DropArea {
 						addedItem.icon = 'internet-web-browser'
 					}
 				}
+				beginDragSession()
 			} else {
 				return
 			}
@@ -1140,6 +1158,13 @@ DropArea {
 	onDraggedItemChanged: update()
 	onTileModelChanged: update()
 	property var tileModel: []
+
+	// The cell grid isn't rebuilt while dragging; catch up once the drag ends.
+	onIsDraggingChanged: {
+		if (!isDragging && cellRepeater.model !== cellRepeater.cellCount) {
+			cellRepeater.model = cellRepeater.cellCount
+		}
+	}
 
 	// `tileModel` is a plain JS array, and Qt >= 6.10 (Plasma 6.8) doesn't
 	// track its length in bindings. Update this property imperatively after
