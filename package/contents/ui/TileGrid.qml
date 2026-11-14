@@ -162,6 +162,9 @@ DropArea {
 	function getGroupForTile(tile) {
 		if (!tile) return null
 		for (var i = 0; i < tileModel.length; i++) {
+			// The dragged item's model position is stale until the drop (other
+			// items may have been pushed into its old area), so it owns nothing.
+			if (i === draggedIndex) continue
 			var t = tileModel[i]
 			if (t.tileType === 'group' && t !== tile && isTileInGroup(t, tile)) {
 				return t
@@ -338,7 +341,7 @@ DropArea {
 	// Section 5: Push Tracking
 	// ============================================================
 
-	property var pushedItems: []  // Array of { tile, origX, origY, pusher }
+	property var pushedItems: []  // Array of { tile, origX, origY, pusher, cascadeDir }
 
 	function getPushedEntry(tile) {
 		for (var i = 0; i < pushedItems.length; i++) {
@@ -347,12 +350,16 @@ DropArea {
 		return null
 	}
 
-	function recordPush(tile, pusher) {
+	function recordPush(tile, pusher, cascadeDir) {
 		// Save tile's current position as its pre-push origin (only on first push).
-		// `pusher` is set for tiles moved by a cascade: the item whose down-push
-		// dragged them along. Their snapback follows that item (see attemptSnapback).
+		// `pusher` is set for tiles moved by a cascade: the item whose vertical push
+		// shoved them along, and `cascadeDir` the direction (1 = down, -1 = up).
+		// Their snapback follows that item (see attemptSnapback).
 		if (!getPushedEntry(tile)) {
-			pushedItems.push({ tile: tile, origX: tile.x, origY: tile.y, pusher: pusher || null })
+			pushedItems.push({
+				tile: tile, origX: tile.x, origY: tile.y,
+				pusher: pusher || null, cascadeDir: cascadeDir || 0,
+			})
 		}
 	}
 
@@ -371,10 +378,10 @@ DropArea {
 		return ignore
 	}
 
-	function findPushSteps(tile, effectiveH, direction, avoidRect, ignoreSet) {
-		// Returns the minimum number of steps to push tile in the given direction
-		// to a free position (not overlapping avoidRect). Returns -1 if not possible.
-		var tx = tile.x, ty = tile.y
+	function findPushSteps(tile, startX, startY, effectiveH, direction, avoidRect, ignoreSet) {
+		// Returns the minimum number of steps to move tile from (startX, startY) in the
+		// given direction to a free position (not overlapping avoidRect). -1 if not possible.
+		var tx = startX, ty = startY
 		var tw = tile.w
 
 		for (var steps = 1; steps <= 64; steps++) {
@@ -412,86 +419,221 @@ DropArea {
 		return 1
 	}
 
+	function getItemHeight(item) {
+		return item.tileType === 'group' ? getGroupFullHeight(item) : item.h
+	}
+
+	function planUpCascade(tile, startX, startY, effectiveH, avoidRect, ignoreSet) {
+		// Plan moving tile up from (startX, startY) just far enough to clear avoidRect,
+		// shoving anything in its way up as well (recursively; gaps above are used up
+		// before anything further up has to move). Nothing may be pushed above row 0.
+		// Returns { x, y, steps, cascade: [{ item, delta, pusher }] } or null.
+		var steps = avoidRect ? startY + effectiveH - avoidRect.y1 : 1
+		if (avoidRect && (startX > avoidRect.x2 || startX + tile.w - 1 < avoidRect.x1)) steps = 1
+		steps = Math.max(1, steps)
+		if (startY - steps < 0) return null
+
+		var rootGroup = tile.tileType === 'group' ? null : getGroupForTile(tile)
+
+		// Every planned item, root first. `from`/`top` are its current/planned top rows.
+		var plan = [{ item: tile, x: startX, from: startY, top: startY - steps, h: effectiveH, ignore: ignoreSet, pusher: null }]
+
+		function ownedByPlan(t) {
+			for (var p = 0; p < plan.length; p++) if (plan[p].ignore.indexOf(t) >= 0) return true
+			return false
+		}
+		function plannedRect(P) {
+			return makeRect(P.x, P.top, P.item.w, P.h)
+		}
+
+		// Grow the plan until nothing overlaps: tops only ever decrease, so this settles.
+		for (var pass = 0; pass < 64; pass++) {
+			var changed = false
+			for (var i = 0; i < plan.length; i++) {
+				var P = plan[i]
+				if (P.top < 0) return null
+
+				// Planned items are judged at their new positions: the upper one yields.
+				for (var q = 0; q < plan.length; q++) {
+					var Q = plan[q]
+					if (Q === P || Q.from >= P.from) continue
+					if (rectsOverlap(plannedRect(P), plannedRect(Q))) {
+						Q.top = P.top - Q.h
+						Q.pusher = P.item
+						changed = true
+					}
+				}
+
+				// Unplanned items in the way join the plan.
+				for (var j = P.top; j < P.top + P.h; j++) {
+					for (var k = P.x; k < P.x + P.item.w; k++) {
+						var hit = getTileAtCell(k, j)
+						if (!hit || ownedByPlan(hit)) continue
+
+						// Resolve to the item that has to move: groups move as a unit,
+						// except siblings within the root tile's own group.
+						var item = hit
+						if (hit.tileType !== 'group') {
+							var grp = getGroupForTile(hit)
+							if (grp && grp !== rootGroup) item = grp
+						}
+						if (item === rootGroup) return null  // Would have to push its own group
+						if (item.tileType === 'group') {
+							for (var m = 0; m < plan.length; m++) {
+								if (isTileInGroup(item, plan[m].item)) return null
+							}
+						}
+
+						var h = getItemHeight(item)
+						plan.push({
+							item: item, x: item.x, from: item.y, top: Math.min(item.y, P.top - h), h: h,
+							ignore: buildIgnoreSet(item), pusher: P.item,
+						})
+						changed = true
+					}
+				}
+			}
+			if (!changed) break
+		}
+		for (var r = 0; r < plan.length; r++) {
+			if (plan[r].top < 0) return null
+		}
+
+		var cascade = []
+		for (var c = 1; c < plan.length; c++) {
+			cascade.push({ item: plan[c].item, delta: plan[c].from - plan[c].top, pusher: plan[c].pusher })
+		}
+		return { x: startX, y: startY - steps, steps: steps, cascade: cascade }
+	}
+
+	function findPushOption(tile, startX, startY, effectiveH, avoidRect, ignoreSet) {
+		// Closest way out of avoidRect from (startX, startY): a free spot to the Right
+		// or Left, or an Up push that cascades whatever is above (tiebreak R>L>U).
+		// Returns { x, y, steps, cascade? } or null.
+		var best = null
+		var dirs = ['right', 'left']
+		for (var d = 0; d < dirs.length; d++) {
+			var steps = findPushSteps(tile, startX, startY, effectiveH, dirs[d], avoidRect, ignoreSet)
+			if (steps < 0) continue
+			if (best !== null && steps >= best.steps) continue
+			best = { x: startX + (dirs[d] === 'right' ? steps : -steps), y: startY, steps: steps }
+		}
+		var up = planUpCascade(tile, startX, startY, effectiveH, avoidRect, ignoreSet)
+		if (up && (best === null || up.steps < best.steps)) best = up
+		return best
+	}
+
+	function applyUpCascade(cascade) {
+		// Move the planned items topmost first, so each one moves into space that
+		// has already been vacated (and group membership isn't disturbed mid-way).
+		cascade.sort(function(a, b) { return a.item.y - b.item.y })
+		for (var i = 0; i < cascade.length; i++) {
+			var c = cascade[i]
+			recordPush(c.item, c.pusher, -1)
+			animateTileTo(c.item, c.item.x, c.item.y - c.delta)
+		}
+	}
+
 	function tryPushItem(tile, avoidRect) {
-		// Try to push tile in the best direction (shortest distance, tiebreak R>L>U>D).
-		// Returns true if the push succeeded.
+		// Push tile out of avoidRect. Right/Left/Up (closest, tiebreak R>L>U) are
+		// always preferred; Down is the last resort because it cascades everything
+		// below. Up cascades too, but only shoves what is actually in the way and
+		// only if that fits below row 0. Returns true if the push succeeded.
 		var effectiveH = tile.tileType === 'group' ? getGroupFullHeight(tile) : tile.h
 		var ignoreSet = buildIgnoreSet(tile)
 
-		var rightSteps = findPushSteps(tile, effectiveH, 'right', avoidRect, ignoreSet)
-		var leftSteps  = findPushSteps(tile, effectiveH, 'left',  avoidRect, ignoreSet)
-		var upSteps    = findPushSteps(tile, effectiveH, 'up',    avoidRect, ignoreSet)
-		var downSteps  = findDownPushSteps(tile, effectiveH, avoidRect)
+		var spot = findPushOption(tile, tile.x, tile.y, effectiveH, avoidRect, ignoreSet)
 
-		// Pick shortest distance; order (R, L, U, D) breaks ties
-		var best = null
-		var candidates = [
-			{ dir: 'right', steps: rightSteps },
-			{ dir: 'left',  steps: leftSteps  },
-			{ dir: 'up',    steps: upSteps    },
-			{ dir: 'down',  steps: downSteps  },
-		]
-		for (var c = 0; c < candidates.length; c++) {
-			var cand = candidates[c]
-			if (cand.steps < 0) continue
-			if (best === null || cand.steps < best.steps) {
-				best = cand
+		// betterOption: an already-pushed item may find a spot that is closer to
+		// where it was pushed from (its pushedFrom position) than the one found
+		// from its current, already displaced, position.
+		var entry = getPushedEntry(tile)
+		var origX = entry ? entry.origX : tile.x
+		var origY = entry ? entry.origY : tile.y
+		if (origX !== tile.x || origY !== tile.y) {
+			var fromOrig = findPushOption(tile, origX, origY, effectiveH, avoidRect, ignoreSet)
+			if (fromOrig && (!spot
+					|| Math.abs(fromOrig.x - origX) + Math.abs(fromOrig.y - origY)
+					 < Math.abs(spot.x - origX) + Math.abs(spot.y - origY))) {
+				spot = fromOrig
 			}
 		}
 
-		if (!best) return false
-
 		recordPush(tile)
 
-		var nx = tile.x, ny = tile.y
-		if (best.dir === 'right')     nx += best.steps
-		else if (best.dir === 'left') nx -= best.steps
-		else if (best.dir === 'up')   ny -= best.steps
-		else {
-			// Down: cascade push everything below the tile's current extent
-			ny += best.steps
-			var fromY = tile.y + effectiveH
-			cascadePushDown(tile.x, tile.x + tile.w - 1, fromY, best.steps, ignoreSet, tile)
+		if (spot) {
+			// Anything this item cascaded earlier is free to snap back now that it
+			// has moved out of the way (see attemptSnapback / pusher).
+			if (spot.cascade) applyUpCascade(spot.cascade)
+			animateTileTo(tile, spot.x, spot.y)
+			return true
 		}
 
-		animateTileTo(tile, nx, ny)
+		// Down: cascade push everything below the tile's current extent
+		var downSteps = findDownPushSteps(tile, effectiveH, avoidRect)
+		var fromY = tile.y + effectiveH
+		cascadePushDown(tile.x, tile.x + tile.w - 1, fromY, downSteps, ignoreSet, tile)
+		animateTileTo(tile, tile.x, tile.y + downSteps)
 		return true
 	}
 
 	function cascadePushDown(colX1, colX2, fromY, delta, ignoreSet, pusher) {
-		// Push all tiles in columns [colX1..colX2] whose effective bottom is at y >= fromY
+		// Push everything in columns [colX1..colX2] whose effective bottom is at y >= fromY
 		// down by delta. If a tile is a group member, push the whole group instead.
+		// An item wider than the range pushes what lies below it in its extra columns
+		// too, so the cascade spreads sideways as needed (gaps are preserved).
 		// `pusher` is the item whose down-push caused this cascade.
 		var toMove = []
+		// Siblings of a tile pushed within its own group move individually; moving
+		// their group would drag the pusher (and its pushed position) along too.
+		var pusherGroup = pusher && pusher.tileType !== 'group' ? getGroupForTile(pusher) : null
 
-		for (var i = 0; i < tileModel.length; i++) {
-			var t = tileModel[i]
-			if (i === draggedIndex) continue
-			if (draggedGroupMembers.indexOf(t) >= 0) continue
-			if (ignoreSet && ignoreSet.indexOf(t) >= 0) continue
-			if (t.x > colX2 || t.x + t.w - 1 < colX1) continue  // Outside column range
+		// colFrom[c]: rows >= this in column c are moving down
+		var colFrom = {}
+		for (var c = colX1; c <= colX2; c++) colFrom[c] = fromY
 
-			// Check if this tile (or its group) has any part at y >= fromY
-			var itemToMove = t
-			if (t.tileType !== 'group') {
-				var grp = getGroupForTile(t)
-				if (grp) {
-					if (ignoreSet && ignoreSet.indexOf(grp) >= 0) continue
-					itemToMove = grp
-				}
+		function reachesCascade(item) {
+			var bottom = item.y + getItemHeight(item) - 1
+			for (var c = item.x; c < item.x + item.w; c++) {
+				if (colFrom[c] !== undefined && bottom >= colFrom[c]) return true
 			}
-			// Effective bottom of itemToMove
-			var effH = itemToMove.tileType === 'group' ? getGroupFullHeight(itemToMove) : itemToMove.h
-			if (itemToMove.y + effH - 1 < fromY) continue  // Entirely above cascade range
+			return false
+		}
 
-			if (toMove.indexOf(itemToMove) < 0) toMove.push(itemToMove)
+		for (var pass = 0; pass < 64; pass++) {
+			var changed = false
+			for (var i = 0; i < tileModel.length; i++) {
+				var t = tileModel[i]
+				if (i === draggedIndex) continue
+				if (draggedGroupMembers.indexOf(t) >= 0) continue
+				if (ignoreSet && ignoreSet.indexOf(t) >= 0) continue
+				if (t === pusherGroup) continue  // Its content reaches below, but it holds the pusher
+
+				var itemToMove = t
+				if (t.tileType !== 'group') {
+					var grp = getGroupForTile(t)
+					if (grp && grp !== pusherGroup) {
+						if (ignoreSet && ignoreSet.indexOf(grp) >= 0) continue
+						itemToMove = grp
+					}
+				}
+				if (toMove.indexOf(itemToMove) >= 0) continue
+				if (!reachesCascade(itemToMove)) continue
+
+				toMove.push(itemToMove)
+				for (var c = itemToMove.x; c < itemToMove.x + itemToMove.w; c++) {
+					if (colFrom[c] === undefined || itemToMove.y < colFrom[c]) colFrom[c] = itemToMove.y
+				}
+				changed = true
+			}
+			if (!changed) break
 		}
 
 		// Move bottom-most items first to avoid cascading into each other
 		toMove.sort(function(a, b) { return b.y - a.y })
 
 		for (var i = 0; i < toMove.length; i++) {
-			recordPush(toMove[i], pusher)
+			recordPush(toMove[i], pusher, 1)
 			animateTileTo(toMove[i], toMove[i].x, toMove[i].y + delta)
 		}
 	}
@@ -600,11 +742,12 @@ DropArea {
 
 		// A cascaded tile may only return as far as its pusher has returned, so
 		// the spacing between them is kept. Otherwise it would close the gap
-		// below a still-displaced group and get absorbed into it.
+		// below (or above) a still-displaced group and get absorbed into it.
 		if (entry.pusher) {
 			var pusherEntry = getPushedEntry(entry.pusher)
 			if (pusherEntry) {
-				origY += Math.max(0, entry.pusher.y - pusherEntry.origY)
+				var pusherOffset = entry.pusher.y - pusherEntry.origY
+				if (pusherOffset * entry.cascadeDir > 0) origY += pusherOffset
 			}
 			if (tile.x === origX && tile.y === origY) return false
 		}
@@ -784,6 +927,13 @@ DropArea {
 		}
 
 		canDrop = !checkAndPushCollisions(dropHoverX, dropHoverY, dropWidth, checkH, tileGroupToIgnore)
+
+		// A push may have moved an item out of the way of tiles it cascaded earlier
+		// (betterOption). Let those return now rather than on the next tick, which
+		// may never come if this tick is the drop.
+		if (dynamicPusher && pushedItems.length > 0) {
+			attemptAllSnapbacks()
+		}
 
 		// Animate group members to visually follow the dragged group header
 		if (isDraggingGroup) {
