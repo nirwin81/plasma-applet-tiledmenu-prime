@@ -14,8 +14,6 @@ A menu based on Windows 10's Start Menu.
     * Jump to Letter/Category (can also default to this view)
     * Fullscreen
     * Labeling Groups of Tiles + Move Groups of Tiles + Sorting items in the group
-* Does not support (Win10):
-    * Tile Groups ("Folders")
 
 ## Screenshots
 
