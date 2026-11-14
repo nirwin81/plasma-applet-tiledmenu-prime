@@ -1,3 +1,9 @@
+## v1.2.1 - November 14 2026
+
+* Fixed accidental displacement of tiles when dragging tiles around the grid.
+* Improved performance when dragging webpage, file or folder from external sources onto the grid.
+* Improved visibility of 'tile size' icons for dark themes.
+
 ## v1.2.0 - November 05 2026
 
 * Add Live Tiles: a tile can show a clock, the output of a shell command, a slideshow of a folder of images (optionally including subfolders), details of a media player, or an applications notifications. Optionally alternating with its normal face (Edit Tile > Live Tile)
