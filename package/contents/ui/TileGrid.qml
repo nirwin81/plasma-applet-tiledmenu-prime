@@ -197,6 +197,14 @@ DropArea {
 		return null
 	}
 
+	function hasVisibleBackground(groupTile) {
+		if (!groupTile) return false
+		if (groupTile.backgroundImage) return true
+		var groupColor = groupTile.backgroundColor
+		// Unset or fully transparent (#AARRGGBB with no alpha)
+		return !!groupColor && !/^(transparent|#00[0-9a-f]{6})$/i.test(groupColor)
+	}
+
 	function getHoverGroup(hoverX, hoverY, hoverH) {
 		// Returns the group (if any) whose column span contains hoverX and
 		// whose area (header + content) overlaps the hover Y range.
@@ -1070,7 +1078,12 @@ DropArea {
 		addedItem = null
 	}
 
+	// Emitted once all drag state has been cleared, after a drop or a cancel
+	signal dragEnded()
+
 	function resetDrag() {
+		var wasDragging = isDragging
+
 		// If pushed items remain (drag was cancelled, not dropped), snap them back
 		if (pushedItems.length > 0) {
 			snapbackAll()
@@ -1090,6 +1103,8 @@ DropArea {
 		cancelDragHover()
 		isDragging = false
 		draggedIndex = -1
+
+		if (wasDragging) dragEnded()
 	}
 
 	// ============================================================
@@ -1155,8 +1170,42 @@ DropArea {
 		}
 	}
 
+	// Changing a tile and emitting tileModelChanged() makes the Repeater recreate
+	// every tile, which is too slow for edits that arrive in a stream (dragging in
+	// the color picker). For edits that only affect how one tile looks, call this
+	// instead: it refreshes just that tile.
+	signal tileEdited()
+	function notifyTileEdited(tile) {
+		if (tileModel.indexOf(tile) < 0) {
+			tileModelChanged()
+			return
+		}
+		if (tilesEditedInPlace.indexOf(tile) < 0) tilesEditedInPlace.push(tile)
+		refreshTile(tile)
+		tileEdited()
+	}
+
+	// The Repeater doesn't recreate anything if tileModel equals the copy it last
+	// took, which lacks these edits. If one gets undone (Reset Tile), the tile has
+	// to be refreshed here or it would keep showing the edit.
+	property var tilesEditedInPlace: []
+	function refreshTilesEditedInPlace() {
+		var edited = tilesEditedInPlace
+		tilesEditedInPlace = []
+		for (var i = 0; i < edited.length; i++) refreshTile(edited[i])
+	}
+
+	function refreshTile(tile) {
+		var idx = tileModel.indexOf(tile)
+		var item = idx >= 0 ? tileModelRepeater.itemAt(idx) : null
+		if (item) item.refresh()
+	}
+
 	onDraggedItemChanged: update()
-	onTileModelChanged: update()
+	onTileModelChanged: {
+		update()
+		refreshTilesEditedInPlace()
+	}
 	property var tileModel: []
 
 	// The cell grid isn't rebuilt while dragging; catch up once the drag ends.
@@ -1371,10 +1420,6 @@ DropArea {
 
 					Item {
 						id: cellItem
-						// When group backgrounds extend, group titles sit at z -1.
-						// These cells must stay below them or a right-click on a
-						// group title opens "New Group" instead of the group's menu.
-						z: config.extendGroupBackground ? -2 : 0
 						property int modelX: modelData % columns
 						property int modelY: Math.floor(modelData / columns)
 						x: modelX * cellBoxSize
@@ -1422,6 +1467,12 @@ DropArea {
 						MouseArea {
 							anchors.fill: parent
 							acceptedButtons: Qt.RightButton
+							// With "Extend group background" on, group tiles are below
+							// the cells. Let the click through to a group's title so it
+							// opens the group's menu.
+							onPressed: function(mouse) {
+								mouse.accepted = !tileGrid.getTileAtCell(cellItem.modelX, cellItem.modelY)
+							}
 							onClicked: function(mouse) {
 								if (mouse.button == Qt.RightButton) {
 									cellContextMenu.cellX = cellItem.modelX

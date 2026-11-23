@@ -129,6 +129,10 @@ msgid "Group Text Alignment"
 msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Extend group background behind its tiles"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Sidebar"
 msgstr "Bara laterală"
 
@@ -207,6 +211,10 @@ msgstr "Salt la categorie"
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/SidebarView.qml
 msgid "Tiles Only"
 msgstr "Numai Dale"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Remember the last sidebar view"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "App Description"

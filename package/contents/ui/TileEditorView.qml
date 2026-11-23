@@ -129,7 +129,7 @@ ColumnLayout {
 
 			TileEditorColorGroup {
 				title: i18n("Background Color")
-				placeholderText: (config.extendGroupBackground && (appObj.isGroup || appObj.inGroup)) ? "transparent" : config.defaultTileColor
+				placeholderText: (appObj.inPaintedGroup || (config.extendGroupBackground && appObj.isGroup)) ? "transparent" : config.defaultTileColor
 				key: 'backgroundColor'
 			}
 

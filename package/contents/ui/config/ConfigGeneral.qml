@@ -195,8 +195,8 @@ LibConfig.FormKCM {
 			}
 			LibConfig.CheckBox {
 				text: i18n("Gradient")
+				// Not disabled by Transparent: it also applies to tiles with their own color.
 				configKey: 'defaultTileGradient'
-				enabled: !plasmoid.configuration.defaultTileTransparent
 			}
 		}
 		QQC2.RadioButton {
@@ -465,17 +465,21 @@ LibConfig.FormKCM {
 	LibConfig.ComboBox {
 		id: defaultAppListViewControl
 		configKey: "defaultAppListView"
+		enabled: !plasmoid.configuration.rememberLastAppListView
 		Kirigami.FormData.label: i18n("Default View")
 		model: [
 			{ value: "Alphabetical", text: i18n("Alphabetical") },
 			{ value: "Categories", text: i18n("Categories") },
 			{ value: "JumpToLetter", text: i18n("Jump To Letter") },
 			{ value: "JumpToCategory", text: i18n("Jump To Category") },
+			{ value: "TilesOnly", text: i18n("Tiles Only") },
 		]
 	}
 	LibConfig.CheckBox {
 		text: i18n("Remember the last sidebar view")
 		configKey: "rememberLastAppListView"
+		// Start from Default View again instead of a view remembered long ago.
+		onClicked: plasmoid.configuration.lastAppListView = ""
 	}
 
 	LibConfig.ComboBox {

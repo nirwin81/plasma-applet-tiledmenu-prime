@@ -129,6 +129,10 @@ msgid "Group Text Alignment"
 msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Extend group background behind its tiles"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Sidebar"
 msgstr "Stranska vrstica"
 
@@ -207,6 +211,10 @@ msgstr "Skoči na kategorijo"
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/SidebarView.qml
 msgid "Tiles Only"
 msgstr "Samo ploščice"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Remember the last sidebar view"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "App Description"

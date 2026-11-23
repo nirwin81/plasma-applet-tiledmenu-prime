@@ -25,7 +25,7 @@ TileEditorGroupBox {
 					delete appObj.tile[key]
 				}
 				appObj.tileChanged()
-				tileGrid.tileModelChanged()
+				tileGrid.notifyTileEdited(appObj.tile)
 			}
 		}
 	}

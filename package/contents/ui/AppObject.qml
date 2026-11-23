@@ -9,22 +9,27 @@ QtObject {
 	readonly property bool isGroup: tile && tile.tileType == "group"
 	readonly property bool isLauncher: !isGroup
 
-	// When "Extend group background" is on, tiles inside a group have no
-	// color of their own until one is chosen, so the group shows through.
-	property bool inGroup: false
-	function refreshInGroup() {
-		var inside = false
-		if (tile && !isGroup && tileGrid) {
-			inside = !!tileGrid.getGroupForTile(tile)
-		}
-		if (inGroup !== inside) {
-			inGroup = inside
-		}
+	// Group state derived from tile positions. Refreshed imperatively rather than
+	// bound: while a drag is in progress TileGrid's group functions leave out the
+	// dragged items, and a binding would follow them (collapsing the background of
+	// a dragged group). Both keep their value during a drag, and are refreshed
+	// when it ends.
+	//   groupRect: for a group, the rect of its content area (else null).
+	//   inPaintedGroup: with "Extend group background" on, whether this tile is in
+	//   a group that paints a background. Such a tile has no color of its own
+	//   until one is chosen, so the group shows through.
+	property var groupRect: null
+	property bool inPaintedGroup: false
+	function refreshGroupState() {
+		// Not isGroup: that binding may not have caught up with `tile` yet.
+		var tileIsGroup = !!tile && tile.tileType == "group"
+		groupRect = tileIsGroup ? tileGrid.getGroupAreaRect(tile) : null
+		inPaintedGroup = !!tile && !tileIsGroup && config.extendGroupBackground
+			&& tileGrid.hasVisibleBackground(tileGrid.getGroupForTile(tile))
 	}
-	onTileChanged: refreshInGroup()
-	Component.onCompleted: refreshInGroup()
+	onTileChanged: refreshGroupState()
 
-	readonly property color defaultBackgroundColor: (isGroup || (inGroup && config.extendGroupBackground)) ? "transparent" : config.defaultTileColor
+	readonly property color defaultBackgroundColor: (isGroup || inPaintedGroup) ? "transparent" : config.defaultTileColor
 	readonly property bool defaultShowIcon: isGroup ? false : true
 	readonly property int defaultTileW: isGroup ? 6 : 2
 	readonly property int defaultTileH: isGroup ? 1 : 2
@@ -47,7 +52,7 @@ QtObject {
 			return tile.gradient
 		}
 		// A default gradient on a clear tile would paint over the group.
-		if (config.extendGroupBackground && (isGroup || inGroup) && !hasOwnBackgroundColor) {
+		if (!hasOwnBackgroundColor && (inPaintedGroup || (isGroup && config.extendGroupBackground))) {
 			return false
 		}
 		return config.defaultTileGradient
@@ -130,20 +135,24 @@ QtObject {
 		}
 	}
 
-	readonly property var groupRect: {
-		if (isGroup) {
-			return tileGrid.getGroupAreaRect(tile)
-		} else {
-			return null
-		}
-	}
 	property Connections tileGridConnection: Connections {
 		target: tileGrid
 		function onTileModelChanged() {
-			if (appObj.isGroup) {
-				appObj.groupRectChanged()
-			}
-			appObj.refreshInGroup()
+			appObj.refreshGroupState()
+		}
+		// The edited tile may be this tile's group, gaining or losing a background.
+		function onTileEdited() {
+			appObj.refreshGroupState()
+		}
+		// A drop emits tileModelChanged before the drag state is cleared.
+		function onDragEnded() {
+			appObj.refreshGroupState()
+		}
+	}
+	property Connections configConnection: Connections {
+		target: config
+		function onExtendGroupBackgroundChanged() {
+			appObj.refreshGroupState()
 		}
 	}
 }

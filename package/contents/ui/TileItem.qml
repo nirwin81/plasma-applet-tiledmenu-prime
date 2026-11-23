@@ -16,11 +16,14 @@ Item {
 	property real targetY: appObj.tileY * cellBoxSize
 	x: targetX
 	y: targetY
-	// Extended group backgrounds sit behind their tiles. Cell hit targets
-	// drop to z -2 in that mode, so the group title stays at z -1 and still
-	// receives clicks. Otherwise every tile stays at z 0.
+	// Extended group backgrounds sit behind their tiles, and behind the grid
+	// cells (z 0) so the cells' drop highlight stays visible on top of them.
+	// That holds while dragging too, or the background would cover the group's
+	// own tiles; a dragged group is only raised above the other backgrounds.
 	readonly property bool extendGroup: appObj.isGroup && config.extendGroupBackground
-	z: dragActive ? 1 : (extendGroup ? -1 : 0)
+	readonly property real restingZ: extendGroup ? -1 : 0
+	readonly property real draggedZ: extendGroup ? -0.5 : 1
+	z: dragActive ? draggedZ : restingZ
 	Behavior on targetX { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 	Behavior on targetY { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 
@@ -29,7 +32,7 @@ Item {
 		targetY = Qt.binding(function(){ return appObj.tileY * cellBoxSize })
 		x = Qt.binding(function(){ return targetX })
 		y = Qt.binding(function(){ return targetY })
-		z = Qt.binding(function(){ return tileItem.dragActive ? 1 : (tileItem.extendGroup ? -1 : 0) })
+		z = Qt.binding(function(){ return tileItem.dragActive ? tileItem.draggedZ : tileItem.restingZ })
 	}
 
 	// IMPORTANT (Qt >= 6.10 / Plasma 6.8): the Repeater's `modelData` is a
@@ -42,6 +45,10 @@ Item {
 		tile: tileModel[index]
 	}
 	readonly property alias app: appObj.app
+
+	function refresh() {
+		appObj.updateFromTile()
+	}
 
 	readonly property bool faded: tileGrid.editing || tileMouseArea.isLeftPressed
 	readonly property int fadedWidth: width - cellPushedMargin
@@ -58,15 +65,11 @@ Item {
 		anchors.right: parent.right
 		anchors.top: parent.top
 		anchors.margins: cellMargin
-		// Groups keep a one-row title. When extended, the background continues
-		// through every row that belongs to the group.
-		height: {
-			var rows = appObj.tileH
-			if (tileItem.extendGroup && appObj.groupRect) {
-				rows += Math.max(0, appObj.groupRect.h)
-			}
-			return rows * cellBoxSize - 2 * cellMargin
-		}
+		// The icon and label stay within the tile itself (a group's title). When
+		// extended, a group's background continues through every row that belongs
+		// to the group.
+		faceHeight: appObj.tileH * cellBoxSize - 2 * cellMargin
+		height: faceHeight + (tileItem.extendGroup && appObj.groupRect ? appObj.groupRect.h * cellBoxSize : 0)
 		readonly property int minSize: Math.min(width, height)
 		readonly property int maxSize: Math.max(width, height)
 		hovered: tileMouseArea.containsMouse

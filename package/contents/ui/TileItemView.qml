@@ -43,6 +43,7 @@ Rectangle {
 	readonly property int labelAlignment: appObj.isGroup ? config.groupLabelAlignment : config.tileLabelAlignment
 
 	property bool hovered: false
+	property real faceHeight: height
 
 	//--- Live tile
 	// Only animate/poll while the menu window is actually shown, so live tiles
@@ -82,7 +83,7 @@ Rectangle {
 			when: appObj.tileW >= 2 && appObj.tileH == 1
 			AnchorChanges { target: icon
 				anchors.horizontalCenter: undefined
-				anchors.left: tileItemView.left
+				anchors.left: face.left
 			}
 			PropertyChanges { target: icon; anchors.leftMargin: tilePadding }
 			PropertyChanges { target: label
@@ -115,46 +116,51 @@ Rectangle {
 		mipmap: true
 	}
 
-	Kirigami.Icon {
-		id: icon
-		visible: appObj.showIcon
-		opacity: tileItemView.staticFaceOpacity
-		Behavior on opacity { NumberAnimation { duration: 300 } }
-		source: appObj.iconSource
-		anchors.verticalCenter: parent.verticalCenter
-		// The view is taller than the title when a group background is extended.
-		// Keep the icon in the title row.
-		anchors.verticalCenterOffset: (appObj.isGroup && config.extendGroupBackground && appObj.groupRect) ? -(Math.max(0, appObj.groupRect.h) * cellBoxSize) / 2 : 0
-		anchors.horizontalCenter: parent.horizontalCenter
-		// property int size: 72 // Just a default, overriden in State change
-		property int size: Math.min(parent.width, parent.height) / 2
-		width: appObj.showIcon ? size : 0
-		height: appObj.showIcon ? size : 0
-		anchors.fill: (appObj.iconFill && !(appObj.isGroup && config.extendGroupBackground)) ? parent : null
-		smooth: appObj.iconFill || config.smallTileIcons
-	}
-
-	PlasmaComponents3.Label {
-		id: label
-		visible: appObj.showLabel
-		opacity: tileItemView.staticFaceOpacity
-		Behavior on opacity { NumberAnimation { duration: 300 } }
-		text: appObj.labelText
-		anchors.top: parent.top
-		anchors.bottom: parent.bottom
-		// Leave the label in the title row when the background continues below it.
-		anchors.bottomMargin: (appObj.isGroup && config.extendGroupBackground && appObj.groupRect) ? Math.max(0, appObj.groupRect.h) * cellBoxSize : 0
-		anchors.leftMargin: tilePadding
-		anchors.rightMargin: tilePadding
+	// Holds the icon and label. Same size as the view, except for a group with
+	// an extended background, where the view is taller than the group's title.
+	Item {
+		id: face
 		anchors.left: parent.left
 		anchors.right: parent.right
-		wrapMode: Text.Wrap
-		horizontalAlignment: labelAlignment
-		verticalAlignment: appObj.isGroup ? config.groupLabelVerticalAlignment : Text.AlignBottom
-		width: parent.width
-		renderType: Text.QtRendering // Fix pixelation when scaling. Plasma.Label uses NativeRendering.
-		style: Text.Outline
-		styleColor: appObj.backgroundGradient ? tileItemView.gradientBottomColor : appObj.backgroundColor
+		anchors.top: parent.top
+		height: tileItemView.faceHeight
+
+		Kirigami.Icon {
+			id: icon
+			visible: appObj.showIcon
+			opacity: tileItemView.staticFaceOpacity
+			Behavior on opacity { NumberAnimation { duration: 300 } }
+			source: appObj.iconSource
+			anchors.verticalCenter: parent.verticalCenter
+			anchors.horizontalCenter: parent.horizontalCenter
+			// property int size: 72 // Just a default, overriden in State change
+			property int size: Math.min(parent.width, parent.height) / 2
+			width: appObj.showIcon ? size : 0
+			height: appObj.showIcon ? size : 0
+			anchors.fill: appObj.iconFill ? parent : null
+			smooth: appObj.iconFill || config.smallTileIcons
+		}
+
+		PlasmaComponents3.Label {
+			id: label
+			visible: appObj.showLabel
+			opacity: tileItemView.staticFaceOpacity
+			Behavior on opacity { NumberAnimation { duration: 300 } }
+			text: appObj.labelText
+			anchors.top: parent.top
+			anchors.bottom: parent.bottom
+			anchors.leftMargin: tilePadding
+			anchors.rightMargin: tilePadding
+			anchors.left: parent.left
+			anchors.right: parent.right
+			wrapMode: Text.Wrap
+			horizontalAlignment: labelAlignment
+			verticalAlignment: appObj.isGroup ? config.groupLabelVerticalAlignment : Text.AlignBottom
+			width: parent.width
+			renderType: Text.QtRendering // Fix pixelation when scaling. Plasma.Label uses NativeRendering.
+			style: Text.Outline
+			styleColor: appObj.backgroundGradient ? tileItemView.gradientBottomColor : appObj.backgroundColor
+		}
 	}
 
 	// Slides up over the static face (Windows-style "peek"). Live tile

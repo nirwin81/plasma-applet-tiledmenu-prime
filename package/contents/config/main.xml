@@ -43,7 +43,7 @@
 			<default>xdg:DOCUMENTS,xdg:PICTURES,org.kde.dolphin.desktop,systemsettings.desktop</default>
 		</entry>
 		<entry name="defaultAppListView" type="string">
-			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory. Tiles Only is remembered by rememberLastAppListView, not stored here. -->
+			<!-- enum: Alphabetical, Categories, JumpToLetter, JumpToCategory, TilesOnly -->
 			<default>Alphabetical</default>
 		</entry>
 		<entry name="rememberLastAppListView" type="bool">
@@ -139,7 +139,7 @@
 			<default>true</default>
 		</entry>
 		<entry name="extendGroupBackground" type="bool">
-			<label>Paint each group background behind its tiles, and leave tiles inside a group transparent until they have their own color.</label>
+			<label>Paint each group background behind its tiles, and leave tiles inside a group that has a background transparent until they have their own color.</label>
 			<default>false</default>
 		</entry>
 		<entry name="appDescription" type="string">

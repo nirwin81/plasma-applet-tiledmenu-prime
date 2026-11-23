@@ -130,6 +130,10 @@ msgid "Group Text Alignment"
 msgstr "تراز گروهی متن"
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Extend group background behind its tiles"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Sidebar"
 msgstr "نوار کناری"
 
@@ -208,6 +212,10 @@ msgstr "پرش به دسته‌بندی"
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/SidebarView.qml
 msgid "Tiles Only"
 msgstr "تنها کاشی ها"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Remember the last sidebar view"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "App Description"

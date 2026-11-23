@@ -129,6 +129,10 @@ msgid "Group Text Alignment"
 msgstr "그룹 텍스트 정렬"
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Extend group background behind its tiles"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Sidebar"
 msgstr "사이드바"
 
@@ -207,6 +211,10 @@ msgstr "범주로 이동"
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/SidebarView.qml
 msgid "Tiles Only"
 msgstr "타일만"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Remember the last sidebar view"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "App Description"

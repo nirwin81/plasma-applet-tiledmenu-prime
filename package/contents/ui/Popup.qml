@@ -52,9 +52,13 @@ MouseArea {
 			onEditTile: function(tileIndex) { tileEditorViewLoader.open(tileIndex) }
 
 			onTileModelChanged: {
-				if (popup.syncingTiles) {
-					return
+				if (!popup.syncingTiles) {
+					tilesModified()
 				}
+			}
+			onTileEdited: tilesModified()
+
+			function tilesModified() {
 				config.tileModelRevision += 1
 				popup.shownTileRevision = config.tileModelRevision
 				saveTileModel.restart()
