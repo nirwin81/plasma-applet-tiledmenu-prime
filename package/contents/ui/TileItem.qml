@@ -19,10 +19,14 @@ Item {
 	// Extended group backgrounds sit behind their tiles, and behind the grid
 	// cells (z 0) so the cells' drop highlight stays visible on top of them.
 	// That holds while dragging too, or the background would cover the group's
-	// own tiles; a dragged group is only raised above the other backgrounds.
+	// own tiles; such a group is only raised above the other backgrounds. A group
+	// with nothing painted behind its tiles is raised above everything.
 	readonly property bool extendGroup: appObj.isGroup && config.extendGroupBackground
+	readonly property bool paintsBehindTiles: extendGroup
+		&& !!appObj.groupRect && appObj.groupRect.h > 0
+		&& (appObj.backgroundImage !== "" || appObj.backgroundColor.a > 0)
 	readonly property real restingZ: extendGroup ? -1 : 0
-	readonly property real draggedZ: extendGroup ? -0.5 : 1
+	readonly property real draggedZ: paintsBehindTiles ? -0.5 : 1
 	z: dragActive ? draggedZ : restingZ
 	Behavior on targetX { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
 	Behavior on targetY { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }

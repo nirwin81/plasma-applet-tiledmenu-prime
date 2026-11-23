@@ -4,32 +4,32 @@
 
 |  Locale  |  Lines  | % Done|
 |----------|---------|-------|
-| Template |     119 |       |
-| de       | 110/119 |   92% |
-| es       | 113/119 |   94% |
-| fa       | 117/119 |   98% |
-| fi       | 113/119 |   94% |
-| fr       | 116/119 |   97% |
-| he       | 116/119 |   97% |
-| hr       |  91/119 |   76% |
-| id       |  99/119 |   83% |
-| ja       | 117/119 |   98% |
-| ko       | 114/119 |   95% |
-| nl       | 117/119 |   98% |
-| pl       | 101/119 |   84% |
-| pt       |  96/119 |   80% |
-| pt_BR    | 112/119 |   94% |
-| ro       | 101/119 |   84% |
-| ru       | 113/119 |   94% |
-| sl       | 112/119 |   94% |
-| tr       | 112/119 |   94% |
-| zh_CN    |  88/119 |   73% |
-| zh_TW    | 117/119 |   98% |
+| Template |     166 |       |
+| de       | 109/166 |   65% |
+| es       | 111/166 |   66% |
+| fa       | 115/166 |   69% |
+| fi       | 111/166 |   66% |
+| fr       | 114/166 |   68% |
+| he       | 114/166 |   68% |
+| hr       |  90/166 |   54% |
+| id       |  98/166 |   59% |
+| ja       | 115/166 |   69% |
+| ko       | 112/166 |   67% |
+| nl       | 115/166 |   69% |
+| pl       | 100/166 |   60% |
+| pt       |  95/166 |   57% |
+| pt_BR    | 110/166 |   66% |
+| ro       | 100/166 |   60% |
+| ru       | 111/166 |   66% |
+| sl       | 110/166 |   66% |
+| tr       | 110/166 |   66% |
+| zh_CN    |  87/166 |   52% |
+| zh_TW    | 115/166 |   69% |
 
 
 ## New Translations
 
-* Fill out [`template.pot`](template.pot) with your translations then open a [new issue](https://github.com/Zren/plasma-applet-tiledmenu/issues/new), name the file `spanish.txt`, attach the txt file to the issue (drag and drop).
+* Fill out [`template.pot`](template.pot) with your translations then open a [new issue](https://github.com/nirwin81/plasma-applet-tiledmenu-prime/issues/new), name the file `spanish.txt`, attach the txt file to the issue (drag and drop).
 
 Or if you know how to make a pull request
 
@@ -56,7 +56,7 @@ Since KDE Frameworks v5.37, translations can be bundled with the zipped `*.plasm
 The binary `.mo` translation files are placed in `package/contents/locale/` so you may want to add `*.mo` to your `.gitignore`.
 
 ```
-package/contents/locale/fr/LC_MESSAGES/plasma_applet_com.github.zren.tiledmenu.mo
+package/contents/locale/fr/LC_MESSAGES/plasma_applet_com.github.nirwin81.tiledmenuprime.mo
 ```
 
 ## Links

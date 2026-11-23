@@ -1154,20 +1154,6 @@ DropArea {
 		appsModel.tileGridModel.favorites = urlList
 		rebuildHitbox()
 		noTiles = (tileModel.length == 0)
-		refreshTileViews()
-	}
-
-	// Qt >= 6.10 (Plasma 6.8) no longer tracks property changes made on plain
-	// JavaScript objects inside QML bindings. When a tile is edited (size,
-	// position, label, icon, background) the view has to be re-evaluated
-	// manually, otherwise the changes never appear on screen.
-	function refreshTileViews() {
-		for (var i = 0; i < tileModelRepeater.count; i++) {
-			var it = tileModelRepeater.itemAt(i)
-			if (it && it.appObj) {
-				it.appObj.updateFromTile()
-			}
-		}
 	}
 
 	// Changing a tile and emitting tileModelChanged() makes the Repeater recreate

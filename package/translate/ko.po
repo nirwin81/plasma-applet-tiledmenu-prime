@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tiledmenu\n"
-"Report-Msgid-Bugs-To: https://github.com/Zren/plasma-applet-tiledmenu\n"
-"POT-Creation-Date: 2024-03-14 04:37-0400\n"
+"Report-Msgid-Bugs-To: https://github.com/nirwin81/plasma-applet-tiledmenu-prime\n"
+"POT-Creation-Date: 2026-11-23 18:29+0000\n"
 "PO-Revision-Date: 2018-12-19 11:26+0900\n"
 "Last-Translator: Hakyong Do <crazyraven@gmail.com>\n"
 "Language-Team: Korean\n"
@@ -16,9 +16,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../metadata.json
-msgid "Tiled Menu"
-msgstr "타일 메뉴"
+#: ../metadata.json ../contents/ui/main.qml
+msgid "Tiled Menu Prime"
+msgstr ""
 
 #: ../metadata.json
 msgid "A menu based on Windows 10's Start Menu."
@@ -56,6 +56,78 @@ msgstr "최근 사용한 프로그램"
 msgid "Most Used"
 msgstr "가장 많이 사용한 프로그램"
 
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "The layout couldn't be saved"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be saved to local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This file can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be imported from local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "%1 doesn't contain a layout. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As..."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Import Layout"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Its \"tileModel\" value isn't a list of tiles, so its live tile commands can't be checked. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout runs shell commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Remove commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Cancel"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Accept and proceed"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "The imported layout contains live tiles that run shell commands every time the menu is open. A command can do anything your user account can do, including deleting files or sending your data elsewhere. Only accept commands you understand and trust."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands that write files or run inline scripts:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Dangerous commands (these are always removed):"
+msgstr ""
+
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Popup"
 msgstr "팝업"
@@ -91,6 +163,14 @@ msgstr "타일 크기"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Margin"
 msgstr "타일 계선"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Tile Corner Rounding"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use smaller tile icons"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/TileEditorView.qml
 msgid "Background Color"
@@ -129,6 +209,22 @@ msgid "Group Text Alignment"
 msgstr "그룹 텍스트 정렬"
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Group Text Vertical Alignment"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Top"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Bottom"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use dynamic pusher"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Extend group background behind its tiles"
 msgstr ""
 
@@ -159,6 +255,14 @@ msgstr "사이드바 바로가기"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Add Default"
 msgstr "기본값 추가"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide User controls"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide Power controls"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Search Box"
@@ -260,9 +364,21 @@ msgstr "병합 (프로그램 실행)"
 msgid "Split into Categories (Application Menu / Dashboard)"
 msgstr "분할 (프로그램 메뉴 / 대시보드)"
 
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Miscellaneous"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use system scaling"
+msgstr ""
+
 #: ../contents/ui/config/ConfigurationShortcuts.qml
 msgid "When this widget has a global shortcut set, like 'Alt+F1', Plasma will open this menu with just the ⊞ Windows / Meta key."
 msgstr "이 위젯에 'Alt+F1' 와 같은 전역 단축키가 설정되어 있으면, Plasma 는 ⊞ Windows / Meta 키를 통해 메뉴를 열 것입니다."
+
+#: ../contents/ui/live/CommandLiveTile.qml
+msgid "No command set"
+msgstr ""
 
 #: ../contents/ui/main.qml
 msgid "System Info"
@@ -296,6 +412,7 @@ msgstr "크기를 변경하시겠습니까?"
 msgid "Meta + Right Click to resize the menu."
 msgstr "메뉴 크기 변경을 위해 Meta + 마우스 오른쪽 클릭."
 
+#. i18nc("Search [krunnerName, krunnerName, ...], ", "Search %1", search.filters.toString())
 #: ../contents/ui/SearchField.qml
 msgid "Search"
 msgstr "검색"
@@ -311,11 +428,6 @@ msgstr "파일 검색"
 #: ../contents/ui/SearchField.qml
 msgid "Search Bookmarks"
 msgstr "북마크 검색"
-
-#: ../contents/ui/SearchField.qml
-msgctxt "Search [krunnerName, krunnerName, ...], "
-msgid "Search %1"
-msgstr "검색 %1"
 
 #: ../contents/ui/SearchFiltersViewItem.qml ../contents/ui/SearchFiltersView.qml
 msgid "Default"
@@ -393,6 +505,78 @@ msgstr "사용자 관리자"
 msgid "Power"
 msgstr "전원"
 
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Live Tile"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "None"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Clock"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command output"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Slideshow"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Media player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Notification count"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Alternate with the normal tile face"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Time format, e.g. hh:mm:ss (default: locale)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command, e.g. uptime -p"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Image folder (default: Pictures)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Choose an image folder"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Include subfolders"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Only show this app's player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Show the latest notifications' text (2×2 and larger)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Shuffle"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Change image every (seconds):"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Refresh every (seconds):"
+msgstr ""
+
 #: ../contents/ui/TileEditorView.qml ../contents/ui/TileItem.qml
 msgid "Edit Tile"
 msgstr "타일 편집"
@@ -458,6 +642,11 @@ msgid "Software Center"
 msgstr "소프트웨어 센터"
 
 #: ../contents/ui/TileGrid.qml
+msgctxt "default group label"
+msgid "Group"
+msgstr "그룹"
+
+#: ../contents/ui/TileGrid.qml
 msgid "New Group"
 msgstr "새 그룹"
 
@@ -468,11 +657,6 @@ msgstr "타일 잠금해제"
 #: ../contents/ui/TileGrid.qml
 msgid "Lock Tiles"
 msgstr "타일 잠금"
-
-#: ../contents/ui/TileGrid.qml
-msgctxt "default group label"
-msgid "Group"
-msgstr "그룹"
 
 #: ../contents/ui/TileGridSplash.qml
 msgid "Getting Started"
@@ -493,6 +677,17 @@ msgstr "기본 타일 레이아웃 사용"
 #: ../contents/ui/TileItem.qml
 msgid "Sort Tiles"
 msgstr "타일 정렬"
+
+#: ../contents/ui/TileItem.qml
+msgid "Tile size"
+msgstr ""
+
+#~ msgid "Tiled Menu"
+#~ msgstr "타일 메뉴"
+
+#~ msgctxt "Search [krunnerName, krunnerName, ...], "
+#~ msgid "Search %1"
+#~ msgstr "검색 %1"
 
 #~ msgid "<b>Version:</b> %1"
 #~ msgstr "<b>버전:</b> %1"

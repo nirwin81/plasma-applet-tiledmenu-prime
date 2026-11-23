@@ -465,7 +465,8 @@ LibConfig.FormKCM {
 	LibConfig.ComboBox {
 		id: defaultAppListViewControl
 		configKey: "defaultAppListView"
-		enabled: !plasmoid.configuration.rememberLastAppListView
+		// Still in use while remembering, until there is a view to remember.
+		enabled: !(plasmoid.configuration.rememberLastAppListView && plasmoid.configuration.lastAppListView)
 		Kirigami.FormData.label: i18n("Default View")
 		model: [
 			{ value: "Alphabetical", text: i18n("Alphabetical") },

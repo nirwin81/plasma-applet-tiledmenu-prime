@@ -9,8 +9,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tiledmenu\n"
-"Report-Msgid-Bugs-To: https://github.com/Zren/plasma-applet-tiledmenu\n"
-"POT-Creation-Date: 2024-03-14 04:37-0400\n"
+"Report-Msgid-Bugs-To: https://github.com/nirwin81/plasma-applet-tiledmenu-"
+"prime\n"
+"POT-Creation-Date: 2026-11-23 18:29+0000\n"
 "PO-Revision-Date: 2021-11-10 13:35+0100\n"
 "Last-Translator: Alan Paris <Alan90000@yahoo.com>\n"
 "Language-Team: fr\n"
@@ -20,9 +21,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.0.6\n"
 
-#: ../metadata.json
-msgid "Tiled Menu"
-msgstr "Tiled Menu"
+#: ../metadata.json ../contents/ui/main.qml
+msgid "Tiled Menu Prime"
+msgstr ""
 
 #: ../metadata.json
 msgid "A menu based on Windows 10's Start Menu."
@@ -60,6 +61,84 @@ msgstr "Application Récentes"
 msgid "Most Used"
 msgstr "Les plus utilisés"
 
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "The layout couldn't be saved"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be saved to local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This file can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be imported from local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "%1 doesn't contain a layout. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As..."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Import Layout"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid ""
+"Its \"tileModel\" value isn't a list of tiles, so its live tile commands "
+"can't be checked. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout runs shell commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Remove commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Cancel"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Accept and proceed"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid ""
+"The imported layout contains live tiles that run shell commands every time "
+"the menu is open. A command can do anything your user account can do, "
+"including deleting files or sending your data elsewhere. Only accept "
+"commands you understand and trust."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands that write files or run inline scripts:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Dangerous commands (these are always removed):"
+msgstr ""
+
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Popup"
 msgstr "Menu contextuel"
@@ -95,6 +174,14 @@ msgstr "Taille des tuiles"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Margin"
 msgstr "Marge des tuiles"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Tile Corner Rounding"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use smaller tile icons"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/TileEditorView.qml
 msgid "Background Color"
@@ -133,6 +220,22 @@ msgid "Group Text Alignment"
 msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Group Text Vertical Alignment"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Top"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Bottom"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use dynamic pusher"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Extend group background behind its tiles"
 msgstr ""
 
@@ -163,6 +266,14 @@ msgstr "Raccourcis de la Barre Verticale"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Add Default"
 msgstr "Ajouter par défault"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide User controls"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide Power controls"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Search Box"
@@ -264,6 +375,14 @@ msgstr "Fusionné (Lanceur d'applications)"
 msgid "Split into Categories (Application Menu / Dashboard)"
 msgstr "Diviser en catégories (Menu des applications / Panneau de bord)"
 
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Miscellaneous"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use system scaling"
+msgstr ""
+
 #: ../contents/ui/config/ConfigurationShortcuts.qml
 msgid ""
 "When this widget has a global shortcut set, like 'Alt+F1', Plasma will open "
@@ -271,6 +390,10 @@ msgid ""
 msgstr ""
 "Quand cet add-on a un raccourci clavier établi, comme 'Alt+F1', Plasma "
 "ouvrira le menu avec la touche ⊞ Windows / Meta."
+
+#: ../contents/ui/live/CommandLiveTile.qml
+msgid "No command set"
+msgstr ""
 
 #: ../contents/ui/main.qml
 msgid "System Info"
@@ -304,6 +427,7 @@ msgstr "Changer la taille ?"
 msgid "Meta + Right Click to resize the menu."
 msgstr "Meta + Clic Droit pour modifier la taille du menu."
 
+#. i18nc("Search [krunnerName, krunnerName, ...], ", "Search %1", search.filters.toString())
 #: ../contents/ui/SearchField.qml
 msgid "Search"
 msgstr "Chercher"
@@ -319,11 +443,6 @@ msgstr "Rechercher des fichiers"
 #: ../contents/ui/SearchField.qml
 msgid "Search Bookmarks"
 msgstr "Rechercher des favoris"
-
-#: ../contents/ui/SearchField.qml
-msgctxt "Search [krunnerName, krunnerName, ...], "
-msgid "Search %1"
-msgstr "Rechercher %1"
 
 #: ../contents/ui/SearchFiltersViewItem.qml
 #: ../contents/ui/SearchFiltersView.qml
@@ -402,6 +521,78 @@ msgstr "Gestionnaire d'utilisateurs"
 msgid "Power"
 msgstr "Énergie"
 
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Live Tile"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "None"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Clock"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command output"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Slideshow"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Media player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Notification count"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Alternate with the normal tile face"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Time format, e.g. hh:mm:ss (default: locale)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command, e.g. uptime -p"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Image folder (default: Pictures)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Choose an image folder"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Include subfolders"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Only show this app's player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Show the latest notifications' text (2×2 and larger)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Shuffle"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Change image every (seconds):"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Refresh every (seconds):"
+msgstr ""
+
 #: ../contents/ui/TileEditorView.qml ../contents/ui/TileItem.qml
 msgid "Edit Tile"
 msgstr "Editer la Tuile"
@@ -467,6 +658,11 @@ msgid "Software Center"
 msgstr "Logithèque"
 
 #: ../contents/ui/TileGrid.qml
+msgctxt "default group label"
+msgid "Group"
+msgstr "Groupe"
+
+#: ../contents/ui/TileGrid.qml
 msgid "New Group"
 msgstr "Nouveau Groupe"
 
@@ -477,11 +673,6 @@ msgstr "Dévérouiller les Tuiles"
 #: ../contents/ui/TileGrid.qml
 msgid "Lock Tiles"
 msgstr "Verrouiller les Tuiles"
-
-#: ../contents/ui/TileGrid.qml
-msgctxt "default group label"
-msgid "Group"
-msgstr "Groupe"
 
 #: ../contents/ui/TileGridSplash.qml
 msgid "Getting Started"
@@ -502,6 +693,17 @@ msgstr "Utilisez la disposition de tuiles par défaut"
 #: ../contents/ui/TileItem.qml
 msgid "Sort Tiles"
 msgstr "Trier les Tuiles"
+
+#: ../contents/ui/TileItem.qml
+msgid "Tile size"
+msgstr ""
+
+#~ msgid "Tiled Menu"
+#~ msgstr "Tiled Menu"
+
+#~ msgctxt "Search [krunnerName, krunnerName, ...], "
+#~ msgid "Search %1"
+#~ msgstr "Rechercher %1"
 
 #~ msgid "<b>Version:</b> %1"
 #~ msgstr "<b>Version:</b> %1"

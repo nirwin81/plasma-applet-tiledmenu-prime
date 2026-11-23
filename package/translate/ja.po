@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: tiledmenu\n"
-"Report-Msgid-Bugs-To: https://github.com/Zren/plasma-applet-tiledmenu\n"
-"POT-Creation-Date: 2024-03-14 04:37-0400\n"
+"Report-Msgid-Bugs-To: https://github.com/nirwin81/plasma-applet-tiledmenu-prime\n"
+"POT-Creation-Date: 2026-11-23 18:29+0000\n"
 "PO-Revision-Date: 2022-08-21 01:10+0900\n"
 "Last-Translator: Kisaragi Hiu <mail@kisaragi-hiu.com>\n"
 "Language-Team: japanese<LL@li.org>\n"
@@ -17,9 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../metadata.json
-msgid "Tiled Menu"
-msgstr "タイルメニュー"
+#: ../metadata.json ../contents/ui/main.qml
+msgid "Tiled Menu Prime"
+msgstr ""
 
 #: ../metadata.json
 msgid "A menu based on Windows 10's Start Menu."
@@ -57,6 +57,78 @@ msgstr "最近使用したアプリ"
 msgid "Most Used"
 msgstr "よく使うアプリ"
 
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "The layout couldn't be saved"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be saved to local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This file can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Layouts can only be imported from local files."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "%1 doesn't contain a layout. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As..."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Import Layout"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Save Layout As"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout can't be imported"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Its \"tileModel\" value isn't a list of tiles, so its live tile commands can't be checked. Nothing was saved."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "This layout runs shell commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Remove commands"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Cancel"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Accept and proceed"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "The imported layout contains live tiles that run shell commands every time the menu is open. A command can do anything your user account can do, including deleting files or sending your data elsewhere. Only accept commands you understand and trust."
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "New commands that write files or run inline scripts:"
+msgstr ""
+
+#: ../contents/ui/config/ConfigExportLayout.qml
+msgid "Dangerous commands (these are always removed):"
+msgstr ""
+
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Popup"
 msgstr "ポップアップ"
@@ -92,6 +164,14 @@ msgstr "タイルサイズ"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Margin"
 msgstr "タイルマージン"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Tile Corner Rounding"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use smaller tile icons"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml ../contents/ui/TileEditorView.qml
 msgid "Background Color"
@@ -130,6 +210,22 @@ msgid "Group Text Alignment"
 msgstr "グループテキストの配置"
 
 #: ../contents/ui/config/ConfigGeneral.qml
+msgid "Group Text Vertical Alignment"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Top"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Bottom"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use dynamic pusher"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
 msgid "Extend group background behind its tiles"
 msgstr ""
 
@@ -160,6 +256,14 @@ msgstr "サイドバーショートカット"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Add Default"
 msgstr "デフォルトを追加"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide User controls"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Hide Power controls"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Search Box"
@@ -261,9 +365,21 @@ msgstr "併合した (アプリケーションランチャー)"
 msgid "Split into Categories (Application Menu / Dashboard)"
 msgstr "カテゴリーを分割 (アプリケーションメニュー / ダッシュボード)"
 
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Miscellaneous"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Use system scaling"
+msgstr ""
+
 #: ../contents/ui/config/ConfigurationShortcuts.qml
 msgid "When this widget has a global shortcut set, like 'Alt+F1', Plasma will open this menu with just the ⊞ Windows / Meta key."
 msgstr "このウィジェットには'Alt+F1'のようなグローバルショートカットをセットできます、Plasmaは ⊞ Windows(Meta)キーだけでこのメニューを開くこともできます。"
+
+#: ../contents/ui/live/CommandLiveTile.qml
+msgid "No command set"
+msgstr ""
 
 #: ../contents/ui/main.qml
 msgid "System Info"
@@ -297,6 +413,7 @@ msgstr "リサイズしますか？"
 msgid "Meta + Right Click to resize the menu."
 msgstr "Meta + 右クリックでメニューをリサイズできます。"
 
+#. i18nc("Search [krunnerName, krunnerName, ...], ", "Search %1", search.filters.toString())
 #: ../contents/ui/SearchField.qml
 msgid "Search"
 msgstr "検索"
@@ -312,11 +429,6 @@ msgstr "ファイルを検索"
 #: ../contents/ui/SearchField.qml
 msgid "Search Bookmarks"
 msgstr "ブックマークを検索"
-
-#: ../contents/ui/SearchField.qml
-msgctxt "Search [krunnerName, krunnerName, ...], "
-msgid "Search %1"
-msgstr "%1を検索"
 
 #: ../contents/ui/SearchFiltersViewItem.qml ../contents/ui/SearchFiltersView.qml
 msgid "Default"
@@ -394,6 +506,78 @@ msgstr "ユーザーマネージャー"
 msgid "Power"
 msgstr "電源"
 
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Live Tile"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "None"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Clock"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command output"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Slideshow"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Media player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Notification count"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Alternate with the normal tile face"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Time format, e.g. hh:mm:ss (default: locale)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Command, e.g. uptime -p"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Image folder (default: Pictures)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Choose an image folder"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Include subfolders"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Only show this app's player"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Show the latest notifications' text (2×2 and larger)"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Shuffle"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Change image every (seconds):"
+msgstr ""
+
+#: ../contents/ui/TileEditorLiveGroup.qml
+msgid "Refresh every (seconds):"
+msgstr ""
+
 #: ../contents/ui/TileEditorView.qml ../contents/ui/TileItem.qml
 msgid "Edit Tile"
 msgstr "タイルを編集"
@@ -459,6 +643,11 @@ msgid "Software Center"
 msgstr "ソフトウェアセンター"
 
 #: ../contents/ui/TileGrid.qml
+msgctxt "default group label"
+msgid "Group"
+msgstr "グループ"
+
+#: ../contents/ui/TileGrid.qml
 msgid "New Group"
 msgstr "新しいグループ"
 
@@ -469,11 +658,6 @@ msgstr "タイルをロック解除"
 #: ../contents/ui/TileGrid.qml
 msgid "Lock Tiles"
 msgstr "タイルをロック"
-
-#: ../contents/ui/TileGrid.qml
-msgctxt "default group label"
-msgid "Group"
-msgstr "グループ"
 
 #: ../contents/ui/TileGridSplash.qml
 msgid "Getting Started"
@@ -494,6 +678,17 @@ msgstr "デフォルトタイルレイアウトを使う"
 #: ../contents/ui/TileItem.qml
 msgid "Sort Tiles"
 msgstr "タイルをソート"
+
+#: ../contents/ui/TileItem.qml
+msgid "Tile size"
+msgstr ""
+
+#~ msgid "Tiled Menu"
+#~ msgstr "タイルメニュー"
+
+#~ msgctxt "Search [krunnerName, krunnerName, ...], "
+#~ msgid "Search %1"
+#~ msgstr "%1を検索"
 
 #~ msgid "<b>Version:</b> %1"
 #~ msgstr "<b>バージョン<b> %1"

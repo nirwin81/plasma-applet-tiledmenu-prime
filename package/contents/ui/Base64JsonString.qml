@@ -18,6 +18,19 @@ QtObject {
 		return transientKeys.indexOf(key) >= 0 ? undefined : val
 	}
 
+	// A tile without a size would be drawn with AppObject's default one, but
+	// TileGrid does its layout with the saved size, so fill in the same default.
+	function fillMissingSizes(tiles) {
+		if (!Array.isArray(tiles)) return
+		for (var i = 0; i < tiles.length; i++) {
+			var tile = tiles[i]
+			if (!tile) continue
+			var isGroup = tile.tileType === "group"
+			if (!(tile.w > 0)) tile.w = isGroup ? 6 : 2
+			if (!(tile.h > 0)) tile.h = isGroup ? 1 : 2
+		}
+	}
+
 	Component.onCompleted: {
 		load()
 	}
@@ -42,6 +55,7 @@ QtObject {
 		val = JSON.parse(val)
 		// Round trip, as Qt's JSON.parse ignores its reviver argument.
 		val = JSON.parse(JSON.stringify(val, omitTransientKeys))
+		fillMissingSizes(val)
 		return val
 	}
 

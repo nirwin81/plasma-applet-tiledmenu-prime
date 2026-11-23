@@ -89,7 +89,10 @@ PlasmaComponents3.TextField {
 		hoverEnabled: true
 		cursorShape: Qt.PointingHandCursor
 
-		onClicked: dialogLoader.active = true
+		onClicked: {
+			dialogLoader.initText = colorField.text
+			dialogLoader.active = true
+		}
 
 		// Color Preview Circle
 		Rectangle {
@@ -130,6 +133,9 @@ PlasmaComponents3.TextField {
 	Loader {
 		id: dialogLoader
 		active: false
+		// Restored on cancel. Not the dialog's color, as an unset field has none
+		// (it would come back as black).
+		property string initText: ""
 		sourceComponent: QtDialogs.ColorDialog {
 			id: dialog
 			visible: true
@@ -148,13 +154,8 @@ PlasmaComponents3.TextField {
 			onRejected: {
 				// This event is also triggered when the user clicks outside the popup modal.
 				// TODO Find a way to only trigger when Cancel is clicked.
-				colorField.text = initColor
+				colorField.text = dialogLoader.initText
 				dialogLoader.active = false
-			}
-
-			property color initColor
-			Component.onCompleted: {
-				initColor = colorField.valueColor
 			}
 		}
 	}
