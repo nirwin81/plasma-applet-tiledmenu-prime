@@ -156,11 +156,35 @@ LibConfig.FormKCM {
 		}
 	}
 	LibConfig.SpinBox {
+		id: tileMarginControl
 		configKey: 'tileMargin'
 		Kirigami.FormData.label: i18n("Tile Margin")
 		suffix: i18n("px")
 		minimumValue: 0
 		maximumValue: config.cellBoxUnits/2
+	}
+	RowLayout {
+		Kirigami.FormData.label: i18n("Group Margin")
+		Kirigami.FormData.buddyFor: groupMarginControl
+		LibConfig.SpinBox {
+			id: groupMarginControl
+			configKey: 'groupMargin'
+			enabled: !plasmoid.configuration.groupMarginSameAsTile
+			suffix: i18n("px")
+			minimumValue: 0
+			maximumValue: config.cellBoxUnits/2
+		}
+		Binding {
+			target: groupMarginControl
+			property: "value"
+			value: tileMarginControl.value
+			when: plasmoid.configuration.groupMarginSameAsTile
+			restoreMode: Binding.RestoreNone // When unticked, start from the tile margin.
+		}
+		LibConfig.CheckBox {
+			text: i18n("Same as Tile Margin")
+			configKey: 'groupMarginSameAsTile'
+		}
 	}
 	LibConfig.SpinBox {
 		configKey: 'tileCornerRadius'

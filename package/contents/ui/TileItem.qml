@@ -10,6 +10,7 @@ Item {
 	// changed signal (AppObject.updateFromTile) when a tile is edited.
 	width: appObj.tileW * cellBoxSize
 	height: appObj.tileH * cellBoxSize
+	readonly property real itemMargin: appObj.isGroup ? groupMargin : cellMargin
 
 	//For push/snapback animations
 	property real targetX: appObj.tileX * cellBoxSize
@@ -55,7 +56,7 @@ Item {
 	}
 
 	readonly property bool faded: tileGrid.editing || tileMouseArea.isLeftPressed
-	readonly property int fadedWidth: width - cellPushedMargin
+	readonly property int fadedWidth: width - (appObj.isGroup ? groupMargin * 2 : cellPushedMargin)
 	opacity: faded ? 0.75 : 1
 	scale: faded ? fadedWidth / width : 1
 	transformOrigin: extendGroup ? Item.Top : Item.Center
@@ -68,11 +69,11 @@ Item {
 		anchors.left: parent.left
 		anchors.right: parent.right
 		anchors.top: parent.top
-		anchors.margins: cellMargin
+		anchors.margins: itemMargin
 		// The icon and label stay within the tile itself (a group's title). When
 		// extended, a group's background continues through every row that belongs
 		// to the group.
-		faceHeight: appObj.tileH * cellBoxSize - 2 * cellMargin
+		faceHeight: appObj.tileH * cellBoxSize - 2 * itemMargin
 		height: faceHeight + (tileItem.extendGroup && appObj.groupRect ? appObj.groupRect.h * cellBoxSize : 0)
 		readonly property int minSize: Math.min(width, height)
 		readonly property int maxSize: Math.max(width, height)
@@ -82,19 +83,20 @@ Item {
 	HoverOutlineEffect {
 		id: hoverOutlineEffect
 		anchors.fill: parent
-		anchors.margins: cellMargin
+		anchors.margins: itemMargin
 		hoverRadius: {
-			// An extended group view is taller than its title. The outline
-			// follows the title, which is the tile item itself.
+			// An extended group view is taller than its title. The effect
+			// covers only the title, which is the tile item itself.
 			if (extendGroup) {
-				return Math.max(tileItem.width, tileItem.height) - 2 * cellMargin
+				return Math.max(tileItem.width, tileItem.height) - 2 * itemMargin
 			} else if (appObj.isGroup) {
 				return tileItemView.maxSize
 			} else {
 				return tileItemView.minSize
 			}
 		}
-		hoverOutlineSize: tileGrid.hoverOutlineSize
+		// A group gets one outline around its title and tiles (groupOutline)
+		hoverOutlineSize: appObj.isGroup ? 0 : tileGrid.hoverOutlineSize
 		radius: tileItemView.cornerRadius
 		mouseArea: tileMouseArea
 	}
@@ -170,20 +172,36 @@ Item {
 		y: (parent.height - height) / 2
 	}
 
+	// Outlines the group as drawn: its title and tiles, inset by the group margin.
+	// Lives next to the tiles rather than in this one, so the group's own tiles
+	// don't cover it. It has to copy this tile's position and scale instead.
 	Loader {
 		id: groupEffectLoader
+		parent: tileItem.parent
+		x: tileItem.x
+		y: tileItem.y
+		z: 2 // Above a dragged tile
+		opacity: tileItem.opacity
+		transform: Scale {
+			origin.x: tileItem.width / 2
+			origin.y: tileItem.extendGroup ? 0 : tileItem.height / 2 // See transformOrigin
+			xScale: tileItem.scale
+			yScale: tileItem.scale
+		}
 		visible: tileMouseArea.containsMouse
 		active: appObj.isGroup && visible
-		sourceComponent: Rectangle {
-			id: groupOutline
-			color: "transparent"
-			border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
-			border.color: "#80ffffff"
-			radius: tileItemView.cornerRadius
-			y: appObj.tileH * cellBoxSize
-			z: 100
-			width: appObj.groupRect.w * cellBoxSize
-			height: appObj.groupRect.h * cellBoxSize
+		sourceComponent: Item {
+			Rectangle {
+				id: groupOutline
+				color: "transparent"
+				border.width: Math.max(1, Math.round(1 * Screen.devicePixelRatio))
+				border.color: hoverOutlineEffect.borderColor
+				radius: tileItemView.cornerRadius
+				x: itemMargin
+				y: itemMargin
+				width: tileItem.width - 2 * itemMargin
+				height: (appObj.tileH + appObj.groupRect.h) * cellBoxSize - 2 * itemMargin
+			}
 		}
 	}
 

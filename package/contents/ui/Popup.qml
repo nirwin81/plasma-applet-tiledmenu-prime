@@ -46,6 +46,7 @@ MouseArea {
 			cellSize: config.cellSize
 			cellMargin: config.cellMargin
 			cellPushedMargin: config.cellPushedMargin
+			groupMargin: config.groupMargin
 
 			tileModel: config.tileModel.value
 

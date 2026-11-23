@@ -48,6 +48,9 @@ Item {
 	readonly property real cellMargin: cellMarginUnits * tileScale * scaleFactor
 	readonly property real cellPushedMargin: cellMargin * 2
 	readonly property int cellBoxSize: cellMargin + cellSize + cellMargin
+	readonly property int groupMarginUnits: plasmoid.configuration.groupMarginSameAsTile ? cellMarginUnits : plasmoid.configuration.groupMargin
+	// cellBoxSize is rounded down, so the largest margin could otherwise exceed half of it.
+	readonly property real groupMargin: Math.min(groupMarginUnits * tileScale * scaleFactor, cellBoxSize / 2)
 	readonly property int tileCornerRadiusUnits: plasmoid.configuration.tileCornerRadius
 	readonly property int tileCornerRadiusMaxUnits: Math.floor(cellSizeUnits * tileScale / 2)
 	readonly property bool smallTileIcons: plasmoid.configuration.smallTileIcons

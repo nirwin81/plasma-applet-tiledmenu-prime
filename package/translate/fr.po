@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: tiledmenu\n"
 "Report-Msgid-Bugs-To: https://github.com/nirwin81/plasma-applet-tiledmenu-"
 "prime\n"
-"POT-Creation-Date: 2026-11-23 18:29+0000\n"
+"POT-Creation-Date: 2026-11-23 22:07+0000\n"
 "PO-Revision-Date: 2021-11-10 13:35+0100\n"
 "Last-Translator: Alan Paris <Alan90000@yahoo.com>\n"
 "Language-Team: fr\n"
@@ -174,6 +174,14 @@ msgstr "Taille des tuiles"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Margin"
 msgstr "Marge des tuiles"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Group Margin"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Same as Tile Margin"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Corner Rounding"

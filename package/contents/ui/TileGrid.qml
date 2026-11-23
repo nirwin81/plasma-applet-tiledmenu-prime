@@ -15,6 +15,7 @@ DropArea {
 	property int cellSize: 60 * config.scaleFactor
 	property real cellMargin: 3 * config.scaleFactor
 	property real cellPushedMargin: 6 * config.scaleFactor
+	property real groupMargin: 3 * config.scaleFactor
 	property int cellBoxSize: cellMargin + cellSize + cellMargin
 	property int hoverOutlineSize: 2 * config.scaleFactor
 

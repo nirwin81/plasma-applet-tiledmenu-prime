@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tiledmenu\n"
 "Report-Msgid-Bugs-To: https://github.com/nirwin81/plasma-applet-tiledmenu-prime\n"
-"POT-Creation-Date: 2026-11-23 18:29+0000\n"
+"POT-Creation-Date: 2026-11-23 22:07+0000\n"
 "PO-Revision-Date: 2018-12-19 11:26+0900\n"
 "Last-Translator: Hakyong Do <crazyraven@gmail.com>\n"
 "Language-Team: Korean\n"
@@ -163,6 +163,14 @@ msgstr "타일 크기"
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Margin"
 msgstr "타일 계선"
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Group Margin"
+msgstr ""
+
+#: ../contents/ui/config/ConfigGeneral.qml
+msgid "Same as Tile Margin"
+msgstr ""
 
 #: ../contents/ui/config/ConfigGeneral.qml
 msgid "Tile Corner Rounding"
