@@ -1,3 +1,12 @@
+## v1.3.0 - November 23 2026
+
+* Added ability to remember the last selected view mode (Alphabetical, Categories, Tiles Only) - Thanks to "the-dbp"
+* Added extended group backgrouns - Thanks to "the-dbp"
+* Transparent tile backgrounds - Thanks to "the-dbp"
+* Added separate Group Margins to allow for better aesthetic control
+* Improved Group hover highlight effect
+* Updated translation sheets (so the full interface can now be properly translated)
+
 ## v1.2.1 - November 14 2026
 
 * Fixed accidental displacement of tiles when dragging tiles around the grid.
