@@ -209,7 +209,7 @@ Item {
 		id: appContextMenu
 		visualParent: tileItem
 		tileIndex: index
-		onPopulateMenu: {
+		onPopulateMenu: function(menu) {   
 			appObj.addActionList(menu)
 
 			if (!plasmoid.configuration.tilesLocked) {
